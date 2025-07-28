@@ -1,0 +1,25 @@
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# ===== Personal Info =====
+NAME = os.getenv("NAME")
+EMAIL = os.getenv("EMAIL")
+PHONE = os.getenv("PHONE")
+LINKEDIN = os.getenv("LINKEDIN")
+
+# ===== Optional Links =====
+GITHUB = os.getenv("GITHUB", None)
+PORTFOLIO = os.getenv("PORTFOLIO", None)
+
+# ===== Job Search Settings =====
+# Automatically attempt LinkedIn Easy Apply after resume generation
+AUTO_APPLY = os.getenv("AUTO_APPLY", "false").lower() in ("true", "1", "yes")
+
+# Default HTML template for resumes (stored in /templates/)
+DEFAULT_TEMPLATE = os.getenv("DEFAULT_TEMPLATE", "base_resume.html")
+
+# (Future) Add toggles for additional automation steps
+# Example: ENABLE_EMAIL_NOTIFICATIONS, TRACK_APPLICATIONS, etc.

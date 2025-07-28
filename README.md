@@ -1,28 +1,28 @@
 # Dynamic Resume Generator with LinkedIn Easy Apply Automation
 
+![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
+
 ## 📌 Overview
 This project is a **single-user automation tool** that:
 - Scrapes job listings from sites like LinkedIn or Indeed.
 - Extracts **keywords** and job requirements from the listing.
 - Uses an **LLM** (OpenAI, Anthropic, etc.) to tailor your resume content.
-- Generates an **ATS-friendly Word/PDF resume** for each job.
+- Generates an **ATS-friendly PDF resume** for each job (using WeasyPrint).
 - (Optional) Automates the **LinkedIn Easy Apply** process via Playwright.
-
-
-![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
 
 > ⚠️ **Requires Python 3.9+**  
 > Tested and confirmed working with **Python 3.9.7**.  
 > Python 3.13 is **not yet supported** due to spaCy dependency issues.
 
+---
 
 ## 📦 Prerequisites
 
-- **Python 3.9 or 3.10 or 3.11**  
+- **Python 3.9, 3.10, or 3.11**  
   (Confirmed stable with 3.9.7; newer versions may break spaCy)
 - [pip](https://pip.pypa.io/en/stable/) for package management
-- [Playwright](https://playwright.dev/python/) browsers installed (via `playwright install`)
-
+- [Playwright](https://playwright.dev/python/) installed (and browsers via `playwright install`)
+- **Windows users only:** [GTK3 Runtime](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases) for PDF generation with WeasyPrint
 
 ---
 
@@ -35,7 +35,7 @@ This project is a **single-user automation tool** that:
 - Uses `spaCy` or an LLM to identify **skills**, **technologies**, and **keywords** in the job description.
 
 3️⃣ **Resume Generation**  
-- Tailors a **master resume** with job-specific bullet points and formats it into Word/PDF (`python-docx`).
+- Generates a **PDF resume** using **WeasyPrint** and a Jinja2 HTML template.
 
 4️⃣ **Easy Apply Automation** *(Optional)*  
 - Playwright logs into LinkedIn, navigates to the job, clicks **Easy Apply**, and fills out required fields automatically.
@@ -44,13 +44,13 @@ This project is a **single-user automation tool** that:
 
 ## 🛠 Tech Stack
 
-- **Python 3.11+**
-- [Playwright](https://playwright.dev/python/) → Job scraping + LinkedIn automation
-- [OpenAI API](https://platform.openai.com/) or [Anthropic API](https://www.anthropic.com/) → Resume rephrasing & keyword matching
-- [spaCy](https://spacy.io/) → Keyword/skills extraction
-- [python-docx](https://python-docx.readthedocs.io/en/latest/) → Word document generation
-- [WeasyPrint](https://weasyprint.org/) *(optional)* → PDF generation
-- [dotenv](https://pypi.org/project/python-dotenv/) → Secure storage of credentials
+- **Python 3.9+**
+- [Playwright](https://playwright.dev/python/) → Job scraping & LinkedIn automation
+- [OpenAI API](https://platform.openai.com/) or [Anthropic API](https://www.anthropic.com/) → Resume tailoring
+- [spaCy](https://spacy.io/) → Keyword extraction
+- [WeasyPrint](https://weasyprint.org/) → PDF generation
+- [Jinja2](https://jinja.palletsprojects.com/) → HTML template rendering
+- [dotenv](https://pypi.org/project/python-dotenv/) → Secure storage of credentials & settings
 
 ---
 
@@ -92,17 +92,34 @@ venv\Scripts\activate      # Windows
 pip install -r requirements.txt
 playwright install
 
-4️⃣  **Create .env file**
+4️⃣ **(Windows only) Install GTK for WeasyPrint**
 
-OPENAI_API_KEY=your_openai_key_here
-LINKEDIN_EMAIL=your_email_here
-LINKEDIN_PASSWORD=your_password_here
+Download and install GTK3 from:
+👉 https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases
+Add GTK’s /bin folder to your PATH and restart PowerShell.
+
+5️⃣ **Create .env file**
+
+Copy .env.example → .env and fill in your details:
+`cp .env.example .env`
+Edit .env:
+`NAME=Your Name`
+`EMAIL=your.email@example.com`
+`PHONE=(555) 555-5555`
+`LINKEDIN=https://linkedin.com/in/yourprofile`
+`AUTO_APPLY=false`
+`DEFAULT_TEMPLATE=base_resume.html`
+
 
 
 ▶️ Usage
 
 1️⃣ Run the script with a job link
 
-python main.py --job "https://www.linkedin.com/jobs/view/123456"
+python main.py
 
+✅ A tailored PDF resume will be generated in:
 
+output/resumes/tailored_resume.pdf
+
+If AUTO_APPLY=true in .env, LinkedIn Easy Apply automation will run (future feature).

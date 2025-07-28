@@ -1,23 +1,49 @@
-# main.py
-from src.scraper import scrape_job_description
-from src.keyword_extractor import extract_keywords
 from src.resume_builder import build_resume
-from src.easy_apply import easy_apply_linkedin
-
-def main(job_url):
-    print(f"[INFO] Scraping job listing: {job_url}")
-    job_data = scrape_job_description(job_url)
-
-    print("[INFO] Extracting keywords...")
-    keywords = extract_keywords(job_data["description"])
-
-    print("[INFO] Building tailored resume...")
-    resume_path = build_resume(keywords)
-
-    print("[INFO] Optional: Easy Apply automation...")
-    easy_apply_linkedin(job_url, resume_path)
+import src.config as config
+from pathlib import Path
 
 if __name__ == "__main__":
-    # Temporary: hardcoded test job
-    job_url = "https://www.linkedin.com/jobs/view/1234567890"
-    main(job_url)
+    # Log what template is being used (from .env)
+    print(f"[INFO] Using resume template: {config.DEFAULT_TEMPLATE}")
+
+    # Build the data dictionary for the resume
+    resume_data = {
+        "name": config.NAME,
+        "email": config.EMAIL,
+        "phone": config.PHONE,
+        "linkedin": config.LINKEDIN,
+        "summary": "Software developer with expertise in backend systems, automation, and CI/CD pipelines.",
+        "skills": [
+            "Python", "Playwright", "LLM Integration", "Docker", "GitHub Actions", "NLP"
+        ],
+        "experiences": [
+            {
+                "role": "Software Developer",
+                "company": "Digital Bounty",
+                "years": "2021–Present",
+                "desc": "Developed backend systems, integrated CI/CD pipelines, and automated key workflows."
+            },
+            {
+                "role": "Product Manager",
+                "company": "Startup XYZ",
+                "years": "2019–2021",
+                "desc": "Led cross-functional teams, defined product roadmaps, and launched MVP to market."
+            }
+        ],
+        "matched_keywords": ["Python", "Automation", "CI/CD", "LinkedIn Easy Apply"]
+    }
+
+    # Generate the PDF resume
+    resume_path = build_resume(resume_data)
+
+    # Inform the user where the PDF was saved
+    print(f"[SUCCESS] Resume generated: {resume_path}")
+
+    # Handle auto-apply logic based on .env setting
+    if config.AUTO_APPLY:
+        print("[INFO] Auto Apply is enabled — starting LinkedIn Easy Apply automation...")
+        # Placeholder for future Playwright automation
+        # from src.easy_apply import easy_apply_linkedin
+        # easy_apply_linkedin(job_url, resume_path)
+    else:
+        print("[INFO] Auto Apply is disabled — skipping automated application.")

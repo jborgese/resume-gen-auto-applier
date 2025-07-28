@@ -1,0 +1,29 @@
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+
+# ===== Virtual Environment =====
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ===== Output & Logs =====
+output/
+*.log
+*.tmp
+
+# ===== IDE / Editor =====
+.vscode/
+.idea/
+*.swp
+
+# ===== System Files =====
+.DS_Store
+Thumbs.db
