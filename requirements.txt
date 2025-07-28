@@ -1,0 +1,28 @@
+# Core automation & scraping
+playwright==1.45.0
+
+# NLP & keyword extraction
+spacy==3.7.4
+# NOTE: After installing, run:
+#   python -m spacy download en_core_web_sm
+
+# LLM integration
+openai==1.35.0
+anthropic==0.25.6
+langchain==0.2.3
+
+# Document generation
+python-docx==1.1.0
+weasyprint==62.2   # For PDF generation (requires GTK libraries on Windows)
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Utilities
+requests==2.32.3
+beautifulsoup4==4.12.3
+pandas==2.2.2
+
+# Dev tools (optional but recommended)
+black==24.4.2
+isort==5.13.2
