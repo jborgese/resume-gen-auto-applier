@@ -9,6 +9,9 @@ NAME = os.getenv("NAME")
 EMAIL = os.getenv("EMAIL")
 PHONE = os.getenv("PHONE")
 LINKEDIN = os.getenv("LINKEDIN")
+LINKEDIN_EMAIL = os.getenv("LINKEDIN_EMAIL")
+LINKEDIN_PASSWORD = os.getenv("LINKEDIN_PASSWORD")
+
 
 # ===== Optional Links =====
 GITHUB = os.getenv("GITHUB", None)

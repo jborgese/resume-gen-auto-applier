@@ -1,10 +1,17 @@
 from src.resume_builder import build_resume
 import src.config as config
 from pathlib import Path
+from src.scraper import scrape_job_description
+import src.config as config
 
 if __name__ == "__main__":
     # Log what template is being used (from .env)
     print(f"[INFO] Using resume template: {config.DEFAULT_TEMPLATE}")
+    job_url = "https://www.linkedin.com/jobs/view/4263376109"  # replace with real job link
+    if config.LINKEDIN_EMAIL is None or config.LINKEDIN_PASSWORD is None:
+        raise ValueError("LinkedIn email and password must be set in the configuration.")
+    job_data = scrape_job_description(job_url, config.LINKEDIN_EMAIL, config.LINKEDIN_PASSWORD)
+    print(job_data)
 
     # Build the data dictionary for the resume
     resume_data = {
