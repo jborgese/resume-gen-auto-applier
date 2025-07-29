@@ -13,7 +13,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
 # ===== Output & Logs =====
 output/
 *.log
@@ -28,3 +27,4 @@ output/
 .DS_Store
 Thumbs.db
 personal_info.yaml
+.env.env/
