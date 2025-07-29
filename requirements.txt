@@ -7,7 +7,7 @@ spacy==3.7.4
 #   python -m spacy download en_core_web_sm
 
 # LLM integration
-openai==1.35.0
+openai==1.97.1
 anthropic==0.25.6
 langchain==0.2.3
 

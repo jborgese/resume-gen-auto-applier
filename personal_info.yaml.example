@@ -1,0 +1,32 @@
+first_name: John
+last_name: Doe
+email: john.doe@example.com
+phone: "(555) 123-4567"
+address:
+  street: 123 Main Street
+  city: Anytown
+  state: NY
+  zip: "12345"
+  country: USA
+linkedin: https://www.linkedin.com/in/john-doe
+github: https://github.com/johndoe
+
+job_history:
+  - title: Senior Software Engineer
+    company: Tech Corp Inc
+    location: New York, NY
+    start_date: 2022-01
+    end_date: present
+    responsibilities:
+      - Developed and maintained web applications using Python and JavaScript.
+      - Led a team of 3 junior developers and mentored them on best practices.
+      - Implemented CI/CD pipelines that reduced deployment time by 50%.
+  - title: Software Developer
+    company: Startup Solutions
+    location: San Francisco, CA
+    start_date: 2020-06
+    end_date: 2021-12
+    responsibilities:
+      - Built RESTful APIs using Node.js and Express framework.
+      - Collaborated with product managers to define technical requirements.
+      - Optimized database queries resulting in 40% performance improvement.

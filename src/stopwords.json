@@ -1,0 +1,26 @@
+{
+  "stopwords": [
+    "ability", "responsibilities", "required", "skills", "duties", "experience",
+    "knowledge", "role", "team", "work", "years", "days", "job", "tasks",
+    "engineer", "developer", "company", "applicants", "applicant", "employees",
+    "members", "requirements", "preferred", "support", "understanding", "salary",
+    "benefits", "opportunity", "position", "candidates", "candidate", "software", 
+    "base", "location", "remote", "full-time", "part-time", "contract",
+    "internship", "intern", "project", "projects", "programming", "programmer",
+    "languages", "language", "frameworks", "tools", "technologies", "technology",
+    "401(k", "401(k)", "health", "insurance", "vacation", "leave", "annual",
+    "sick", "paid", "unpaid", "holiday", "holidays", "availability", "architecture",
+    "design", "testing", "test", "quality", "assurance", "access", "account",
+    "accounts", "user", "users", "profile", "profiles", "login", "password",
+    "activation", "verification", "email", "emails", "communication",
+    "activities", "activity", "meetings", "meeting", "collaboration",
+    "ad&d", "ad&d)", "disability", "life", "insurance", "retirement",
+    "pension", "tuition", "reimbursement", "training", "development",
+    "atlanta", "building", "140k", "birthday", "birthdays", "anniversary",
+    "anniversaries", "celebration", "celebrations", "event", "bonus",
+    "bonuses", "incentive", "incentives", "performance", "performance-based",
+    "review", "reviews", "evaluation", "evaluations", "feedback", "mentorship",
+    "mentoring", "coaching", "coaching", "leadership", "leadership",
+    "management", "manager", "supervisor", "supervision", "director"
+  ]
+}

@@ -27,3 +27,4 @@ output/
 # ===== System Files =====
 .DS_Store
 Thumbs.db
+personal_info.yaml

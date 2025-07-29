@@ -1,43 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume</title>
   <style>
+    /* Global Styles */
     body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-      line-height: 1.6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 50px auto;
+      max-width: 850px;
+      line-height: 1.7;
       color: #333;
+      background-color: #fafafa;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
     }
+
     h1 {
-      font-size: 28px;
-      margin-bottom: 0;
+      font-size: 36px;
+      margin-bottom: 5px;
+      color: #222;
     }
+
     .contact {
-      font-size: 12px;
-      margin-bottom: 20px;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #555;
+    }
+
+    .contact a {
+      text-decoration: none;
+      color: #0073b1;
+      font-weight: bold;
+    }
+
+    .address {
+      font-size: 13px;
+      margin-bottom: 25px;
       color: #666;
     }
+
     h2 {
-      border-bottom: 1px solid #ddd;
-      margin-top: 25px;
+      font-size: 20px;
+      margin-top: 35px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid #0073b1;
+      color: #0073b1;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
+
     ul {
-      margin: 0;
+      margin: 10px 0;
       padding-left: 20px;
     }
-    .keywords {
-      font-size: 10px;
-      margin-top: 30px;
+
+    ul li {
+      margin-bottom: 8px;
+    }
+
+    p {
+      margin-top: 8px;
+      font-size: 15px;
+    }
+
+    .experience-title {
+      font-weight: bold;
+      color: #222;
+      font-size: 16px;
+    }
+
+    .company {
+      font-style: italic;
+      color: #555;
+    }
+
+    .date-range {
+      font-size: 13px;
       color: #777;
+    }
+
+    /* Layout for Education & References */
+    .two-column {
+      display: flex;
+      gap: 50px;
+      margin-top: 30px;
+    }
+
+    .two-column div {
+      flex: 1;
+    }
+
+    /* Keywords section */
+    .keywords {
+      font-size: 11px;
+      margin-top: 35px;
+      color: #777;
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* Print-friendly adjustments */
+    @media print {
+      body {
+        background-color: #fff;
+        box-shadow: none;
+        padding: 0;
+      }
+
+      a {
+        color: black;
+        text-decoration: none;
+      }
     }
   </style>
 </head>
+
 <body>
   <h1>{{ name }}</h1>
+
   <div class="contact">
-    {{ email }} | {{ phone }} | {{ linkedin }}
+    {{ email }} | {{ phone }}{% if linkedin %} | <a href="{{ linkedin }}">LinkedIn</a>{% endif %}
+    {% if github %} | <a href="{{ github }}">GitHub</a>{% endif %}
   </div>
+
+  {% if address %}
+  <div class="address">
+    {{ address.street }}, {{ address.city }}, {{ address.state }} {{ address.zip }}{% if address.country %},
+    {{ address.country }}{% endif %}
+  </div>
+  {% endif %}
 
   <h2>Summary</h2>
   <p>{{ summary }}</p>
@@ -45,19 +140,48 @@
   <h2>Skills</h2>
   <ul>
     {% for skill in skills %}
-      <li>{{ skill }}</li>
+    <li>{{ skill }}</li>
     {% endfor %}
   </ul>
 
   <h2>Experience</h2>
   <ul>
     {% for experience in experiences %}
-      <li><strong>{{ experience.role }}</strong> - {{ experience.company }} ({{ experience.years }})<br>{{ experience.desc }}</li>
+    <li>
+      <span class="experience-title">{{ experience.title }}</span> - <span class="company">{{ experience.company }}</span>
+      <span class="date-range">({{ experience.start_date }} – {{ experience.end_date }})</span><br>
+      {% for task in experience.responsibilities %}
+      • {{ task }}<br>
+      {% endfor %}
+    </li>
     {% endfor %}
   </ul>
 
-  <div class="keywords">
-    Matched Job Keywords: {{ matched_keywords }}
+  <div class="two-column">
+    <div>
+      <h2>Education</h2>
+      <ul>
+        {% for education in education %}
+        <li><strong>{{ education.degree }}</strong> - {{ education.institution }} ({{ education.graduation_date }} – {{
+          education.location }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div>
+      <h2>References</h2>
+      <ul>
+        {% for reference in references %}
+        <li><strong>{{ reference.name }}</strong> - {{ reference.title }}<br>
+          Email: {{ reference.contact.email }} | Phone: {{ reference.contact.phone }}</li>
+        {% endfor %}
+      </ul>
+    </div>
   </div>
+
+  <div class="keywords">
+    {{ keywords }}
+  </div>
+
 </body>
+
 </html>

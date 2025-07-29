@@ -1,0 +1,9 @@
+{
+  "languages": ["Python", "Java", "C++", "JavaScript", "TypeScript", "Go", "Rust"],
+  "frameworks": ["React", "Angular", "Vue", "Django", "Flask", "Node.js", "Spring"],
+  "cloud": ["AWS", "Azure", "GCP", "Heroku"],
+  "tools": ["Docker", "Kubernetes", "Terraform", "GitHub Actions", "Jenkins", "Postman"],
+  "databases": ["PostgreSQL", "MySQL", "MongoDB", "Redis", "Oracle"],
+  "methodologies": ["Agile", "Scrum", "Kanban", "DevOps"],
+  "certifications": ["AWS Certified", "PMP", "Scrum Master", "CKA"]
+}
