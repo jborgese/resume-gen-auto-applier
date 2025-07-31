@@ -1,5 +1,5 @@
 import random, time, json, os
-from src.job_parser import parse_job_card
+from src.job_parser import parse_job_card, wait_for_job_cards_to_hydrate
 import src.config as config
 
 def clean_text(text: str) -> str:
@@ -35,6 +35,32 @@ def save_job_links(job_links, filename="job_urls.json"):
     except Exception as e:
         print(f"[WARN] ⚠️ Failed to save job URLs: {e}")
 
+def clean_existing_jobs(page, filename="job_urls.json"):
+    """Removes jobs from job_urls.json that have already been applied for."""
+    if not os.path.exists(filename):
+        return []
+
+    with open(filename, "r") as f:
+        saved_jobs = json.load(f)
+
+    cleaned_jobs = []
+    for url in saved_jobs:
+        page.goto(url)
+        try:
+            # Look for the "Application submitted" indicator
+            if page.locator("text=Application submitted").count():
+                print(f"[INFO] ✅ Job already applied: {url} — removing from list.")
+                continue  # skip this job
+        except:
+            print(f"[WARN] ⚠️ Could not verify job status for {url}, keeping just in case.")
+
+        cleaned_jobs.append(url)
+
+    # ✅ Overwrite JSON file with cleaned list
+    with open(filename, "w") as f:
+        json.dump(cleaned_jobs, f, indent=2)
+
+    return cleaned_jobs
 
 
 def detect_scroll_target(page):
@@ -83,13 +109,9 @@ def human_like_scroll(page, rounds=12):
 
 def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float = 1.0) -> None:
     """
-    Scrolls the LinkedIn job list container in a natural, human-like way.
-    Adds jitter to scroll speed, pauses when LinkedIn stalls, and hovers to mimic hesitation.
-
-    Args:
-        page: Playwright page object.
-        max_passes: Maximum number of scroll passes per page.
-        pause_between: Base pause (seconds) between scrolls.
+    Scrolls the LinkedIn job list container using the mouse wheel.
+    ✅ Ensures the cursor is always positioned over the job list before scrolling.
+    ✅ Keeps jitter + pauses for human-like behavior.
     """
 
     job_list_selector = "div.scaffold-layout__list.jobs-semantic-search-list"
@@ -104,56 +126,54 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
     if config.DEBUG:
         print(f"[DEBUG] 🎯 Starting human-like scroll inside '{job_list_selector}'")
 
+    scroll_speed = 350  # px per scroll start
     loaded_last_round = 0
-    scroll_speed = 350  # 🎯 starting scroll speed (px per scroll)
 
     for scroll_round in range(max_passes):
+        # ✅ Hover over the job list so the scroll wheel applies there
+        page.hover(job_list_selector)
+
+        # ✅ Check hydration status
         job_cards = page.locator("ul.semantic-search-results-list > li")
         total_cards = job_cards.count()
         placeholders = job_cards.locator(".semantic-search-results-list__generic-occludable-area").count()
         loaded_cards = total_cards - placeholders
 
         if config.DEBUG:
-            print(f"[DEBUG] Scroll pass {scroll_round+1}: {loaded_cards}/25 jobs loaded "
-                  f"(placeholders: {placeholders})")
+            print(f"[DEBUG] Scroll pass {scroll_round+1}: {loaded_cards}/25 jobs loaded (placeholders: {placeholders})")
 
-        # ✅ Stop if we’ve loaded all visible jobs (typically 25 per page)
+        # ✅ Stop if fully hydrated
         if loaded_cards >= 25:
             if config.DEBUG:
-                print(f"[DEBUG] ✅ All jobs loaded by scroll pass {scroll_round+1}")
+                print(f"[DEBUG] ✅ All jobs hydrated by scroll pass {scroll_round+1}")
             break
 
-        # 🎯 Random jitter to simulate natural scroll inconsistency
+        # ✅ Add natural jitter to scrolling
         jitter = random.randint(-20, 20)
-        adjusted_scroll = max(100, scroll_speed + jitter)  # keep it sane
+        adjusted_scroll = max(100, scroll_speed + jitter)
+
+        # ✅ Actually scroll (now with cursor over the right div)
         page.mouse.wheel(0, adjusted_scroll)
 
         if config.DEBUG:
-            print(f"[DEBUG] 🖱️ Scrolled {adjusted_scroll}px "
-                  f"(base {scroll_speed}px + jitter {jitter}px)")
+            print(f"[DEBUG] 🖱️ Scrolled {adjusted_scroll}px (base {scroll_speed}px + jitter {jitter}px)")
 
         time.sleep(pause_between)
 
-        # 🔄 Hover + slow down if LinkedIn didn’t load new jobs
+        # ✅ Adjust scroll speed based on whether new jobs loaded
         if loaded_cards == loaded_last_round:
             scroll_speed = max(150, scroll_speed - 50)
             if config.DEBUG:
                 print(f"[DEBUG] ⏬ No new jobs — slowing scroll to {scroll_speed}px")
-
-            page.hover(job_list_selector)
-            if config.DEBUG:
-                print("[DEBUG] 🕵️ Hover pause — mimicking user hesitation")
-
-            time.sleep(1.5)
+            time.sleep(1.5)  # simulate user pausing/hesitating
         else:
-            # ✅ Speed up slightly when new jobs appear
             scroll_speed = min(500, scroll_speed + 25)
             if config.DEBUG:
                 print(f"[DEBUG] ⏫ New jobs loaded — speeding scroll to {scroll_speed}px")
 
         loaded_last_round = loaded_cards
 
-    # ✅ Final status
+    # ✅ Final status log
     job_cards = page.locator("ul.semantic-search-results-list > li")
     total_cards = job_cards.count()
     placeholders = job_cards.locator(".semantic-search-results-list__generic-occludable-area").count()
@@ -161,21 +181,17 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
     if config.DEBUG:
         print(f"[DEBUG] ✅ Final job load count: {loaded_cards}/25 after human-like scroll.")
 
-
 def collect_job_links_with_pagination(page, base_url: str, max_jobs: int = 100, start_fresh: bool = False) -> list:
     """
     Collects job posting URLs by walking through LinkedIn job search pagination.
-    Uses human-like scrolling to load all jobs and skips already applied jobs.
-
-    ✅ Saves after each page
-    ✅ Skips duplicates from previous runs (loaded from job_urls.json)
-    ✅ Optional start_fresh to clear existing JSON data
+    ✅ Skips jobs already marked 'Applied' in the job list itself
+    ✅ Deduplicates and saves to job_urls.json incrementally
 
     Args:
         page: Playwright page object.
         base_url: LinkedIn search URL (first page).
         max_jobs: Max jobs to collect.
-        start_fresh: If True, will ignore and overwrite any existing job_urls.json.
+        start_fresh: If True, clears job_urls.json before scraping.
 
     Returns:
         list[str]: Deduplicated job posting URLs.
@@ -189,17 +205,19 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: int = 100, 
         os.remove(filename)
         print(f"[INFO] 🗑️ start_fresh=True → Deleted old {filename}")
 
-    # ✅ Load any existing jobs unless starting fresh
-    job_links = [] if start_fresh else list(load_existing_job_links(filename))
-    seen_ids = {url.split("/")[-2] for url in job_links}  # Extract job IDs from URLs
+    # ✅ Load any existing saved jobs
+    job_links = list(load_existing_job_links(filename)) if os.path.exists(filename) else []
+    seen_ids = {url.split("/")[-2] for url in job_links}
 
-    # ✅ Detect total job count
+    print(f"[INFO] 🔄 Loaded {len(job_links)} previously saved job URLs.")
+
+    # ✅ Detect total job count from the search page
     try:
         page.wait_for_selector("div.t-black--light.pv4.text-body-small.mr2", timeout=5000)
         total_jobs_text = page.inner_text("div.t-black--light.pv4.text-body-small.mr2")
         total_jobs = int("".join(filter(str.isdigit, total_jobs_text)))
     except:
-        print("[WARN] Could not find total job count. Defaulting to 1 page.")
+        print("[WARN] ⚠️ Could not find total job count. Defaulting to 1 page.")
         total_jobs = 0
 
     print(f"[INFO] ✅ Total jobs listed: {total_jobs if total_jobs else 'Unknown'}")
@@ -220,7 +238,7 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: int = 100, 
             page.wait_for_selector(job_list_selector, timeout=10000)
             print("[INFO] ✅ Found job list container.")
         except:
-            print(f"[WARN] Job list container not found on page {page_num+1}. Skipping.")
+            print(f"[WARN] ⚠️ Job list container not found on page {page_num+1}. Skipping.")
             continue
 
         # ✅ Hover before scrolling
@@ -234,38 +252,43 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: int = 100, 
         # ✅ Parse job cards
         job_cards = page.locator("ul.semantic-search-results-list > li")
         job_count = job_cards.count()
-
         if config.DEBUG:
             print(f"[DEBUG] Found {job_count} <li> elements after scroll on page {page_num+1}.")
 
         for i in range(job_count):
-            job_data = parse_job_card(job_cards.nth(i))
+            job_el = job_cards.nth(i)
 
-            # Skip missing ID
-            if not job_data.get("id"):
+            # ✅ Check if the job is marked "Applied" in the list
+            applied_badge = job_el.locator("li.job-card-job-posting-card-wrapper__footer-item.t-bold")
+            if applied_badge.count():
+                status_text = applied_badge.inner_text().strip()
+                if status_text.lower() == "applied":
+                    if config.DEBUG:
+                        print(f"[DEBUG] ⏭️ Skipping job already marked 'Applied' in job list.")
+                    continue  # 🚮 Skip immediately
+
+            # ✅ Extract job ID from the card wrapper
+            job_id = job_el.locator("div.job-card-job-posting-card-wrapper").get_attribute("data-job-id")
+            if not job_id:
                 continue
 
-            # Skip jobs already applied
-            if job_data.get("already_applied"):
+            # ✅ Deduplicate by job ID
+            if job_id in seen_ids:
                 if config.DEBUG:
-                    print(f"[DEBUG] ⏭️ Skipping '{job_data['title']}' – application already submitted.")
+                    print(f"[DEBUG] 🔁 Already saved job {job_id} – skipping.")
                 continue
 
-            # ✅ Skip if already saved
-            if job_data["id"] in seen_ids:
-                if config.DEBUG:
-                    print(f"[DEBUG] 🔁 Already saved job {job_data['id']} – skipping.")
-                continue
+            job_url = f"https://www.linkedin.com/jobs/view/{job_id}/"
 
-            # ✅ Add new jobs
-            job_links.append(job_data["url"])
-            seen_ids.add(job_data["id"])
+            # ✅ Add job
+            job_links.append(job_url)
+            seen_ids.add(job_id)
+
             if config.DEBUG:
-                print(f"[DEBUG] ✅ Parsed & added: {job_data}")
+                print(f"[DEBUG] ✅ Added new job {job_id}: {job_url}")
 
         # ✅ Save after each page batch
         save_job_links(job_links, filename)
-
         print(f"[INFO] ✅ Page {page_num+1} done. Total collected so far: {len(job_links)}")
 
         # ✅ Stop if limits are reached

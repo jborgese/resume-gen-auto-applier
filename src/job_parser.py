@@ -1,17 +1,41 @@
 from typing import Union
+import src.config as config
+import time
+
+def wait_for_job_cards_to_hydrate(page, timeout=10000):
+    """
+    Ensures job <li> elements are fully populated (not placeholders).
+    Will loop until all visible job cards have real content or timeout is reached.
+    """
+    import time
+    start = time.time()
+    while time.time() - start < timeout / 1000:
+        all_cards = page.locator("ul.semantic-search-results-list > li")
+        hydrated = True
+        for i in range(all_cards.count()):
+            card = all_cards.nth(i)
+            # If no wrapper, it's probably still a skeleton
+            wrapper = card.locator("div.job-card-job-posting-card-wrapper, div.base-card")
+            if wrapper.count() == 0:
+                hydrated = False
+                break
+        if hydrated:
+            if config.DEBUG:
+                print("[DEBUG] ✅ All job cards are hydrated with data.")
+            return True
+        time.sleep(0.5)
+
+    print("[WARN] ⚠️ Some job cards may not have hydrated fully.")
+    return False
+
 
 def parse_job_card(li_element) -> dict:
     """
     Parses a LinkedIn job card <li> Playwright element into structured job data.
-
-    Args:
-        li_element: Playwright locator for a single <li> job card.
-
-    Returns:
-        dict: Parsed job details with id, url, title, company, location,
-              posted_date, easy_apply flag, work_mode, and applied flag.
+    ✅ Waits for card hydration (wrapper exists) before parsing.
+    ✅ Detects 'Applied' status directly from search list (footer) and fallback banners.
     """
-    job: dict[str, Union[str, bool, None]] = {
+    job = {
         "id": None,
         "url": None,
         "title": None,
@@ -19,63 +43,108 @@ def parse_job_card(li_element) -> dict:
         "location": None,
         "posted_date": None,
         "easy_apply": False,
-        "work_mode": None,          # Remote / Hybrid / On-site
-        "already_applied": False    # Skip if true
+        "work_mode": None,
+        "already_applied": False,
+        "hydrated": False  # <-- new field for debugging
     }
 
-    # ✅ Extract job ID from wrapper div
-    wrapper = li_element.locator("div.job-card-job-posting-card-wrapper")
+    # ✅ --- HYDRATION CHECK ---
+    wrapper_selector = "div.job-card-job-posting-card-wrapper, div.base-card"
+    hydrated = False
+    for attempt in range(5):  # wait up to ~5 seconds for hydration
+        if li_element.locator(wrapper_selector).count():
+            hydrated = True
+            break
+        time.sleep(1)  # allow LinkedIn skeletons to hydrate
+
+    if not hydrated:
+        print("[WARN] ⚠️ Job card not fully hydrated (missing wrapper) — parsing anyway, may be partial.")
+    job["hydrated"] = hydrated
+
+    # ✅ 1. Grab job ID from wrapper
+    wrapper = li_element.locator(wrapper_selector)
     if wrapper.count():
         job_id = wrapper.get_attribute("data-job-id")
         if job_id:
             job["id"] = job_id
             job["url"] = f"https://www.linkedin.com/jobs/view/{job_id}/"
 
+    # ✅ 2. Fallback: grab <a> href if no wrapper
+    if not job["id"]:
+        job_link = li_element.locator("a[href*='/jobs/view/']").first
+        if job_link.count():
+            href = job_link.get_attribute("href")
+            if href and "/jobs/view/" in href:
+                job_id = href.split("/jobs/view/")[1].split("/")[0]
+                job["id"] = job_id
+                job["url"] = f"https://www.linkedin.com/jobs/view/{job_id}/"
+
     # ✅ Title
-    title_sel = "div.job-card-job-posting-card-wrapper__content h3, div.job-card-job-posting-card-wrapper__title"
-    title_el = li_element.locator(title_sel)
-    if title_el.count():
-        job["title"] = title_el.inner_text().strip()
+    try:
+        title_el = li_element.locator("h3")
+        if title_el.count():
+            job["title"] = title_el.inner_text().strip()
+    except:
+        print("[WARN] ⚠️ Could not parse title — possibly still hydrating.")
 
-    # ✅ Company name
-    company_sel = "div.job-card-job-posting-card-wrapper__content div.artdeco-entity-lockup__subtitle"
-    company_el = li_element.locator(company_sel)
-    if company_el.count():
-        job["company"] = company_el.inner_text().strip()
+    # ✅ Company
+    try:
+        company_el = li_element.locator("div.artdeco-entity-lockup__subtitle, span.job-card-container__primary-description")
+        if company_el.count():
+            job["company"] = company_el.inner_text().strip()
+    except:
+        print("[WARN] ⚠️ Could not parse company.")
 
-    # ✅ Location (also used for work_mode detection)
-    location_sel = "div.job-card-job-posting-card-wrapper__content div.artdeco-entity-lockup__caption"
-    location_el = li_element.locator(location_sel)
-    if location_el.count():
-        location_text = location_el.inner_text().strip()
-        job["location"] = location_text
+    # ✅ Location
+    try:
+        location_el = li_element.locator("div.artdeco-entity-lockup__caption, .job-card-container__metadata-item")
+        if location_el.count():
+            location_text = location_el.inner_text().strip()
+            job["location"] = location_text
 
-        # Extract work mode (basic heuristic)
-        if "(Remote)" in location_text:
-            job["work_mode"] = "Remote"
-        elif "(Hybrid)" in location_text:
-            job["work_mode"] = "Hybrid"
-        elif "(On-site)" in location_text:
-            job["work_mode"] = "On-site"
+            # Simple heuristic for work mode
+            if "Remote" in location_text:
+                job["work_mode"] = "Remote"
+            elif "Hybrid" in location_text:
+                job["work_mode"] = "Hybrid"
+            elif "On-site" in location_text:
+                job["work_mode"] = "On-site"
+    except:
+        print("[WARN] ⚠️ Could not parse location.")
 
-    # ✅ Posted date (from <time datetime>)
-    time_el = li_element.locator("time")
-    if time_el.count():
-        job["posted_date"] = time_el.get_attribute("datetime")
+    # ✅ Posted date
+    try:
+        time_el = li_element.locator("time")
+        if time_el.count():
+            job["posted_date"] = time_el.get_attribute("datetime")
+    except:
+        print("[WARN] ⚠️ No posted date found.")
 
-    # ✅ Easy Apply detection
-    easy_apply_el = li_element.locator("li.job-card-job-posting-card-wrapper__footer-item span")
-    if easy_apply_el.count():
-        footer_texts = easy_apply_el.all_inner_texts()
+    # ✅ Easy Apply
+    try:
+        footer_texts = li_element.locator("span").all_inner_texts()
         if any("Easy Apply" in text for text in footer_texts):
             job["easy_apply"] = True
+    except:
+        print("[WARN] ⚠️ Could not verify Easy Apply status.")
 
-    # ✅ Check if user already applied (Application submitted)
-    applied_el = li_element.locator("div.post-apply-timeline__content")
-    if applied_el.count():
-        # Look for the exact text inside the timeline div
-        applied_text = applied_el.inner_text().strip()
-        if "Application submitted" in applied_text:
-            job["already_applied"] = True
+    # ✅ Already applied (list-level detection)
+    try:
+        applied_footer_item = li_element.locator("li.job-card-job-posting-card-wrapper__footer-item.t-bold")
+        if applied_footer_item.count():
+            applied_text = applied_footer_item.inner_text().strip()
+            if "Applied" in applied_text:
+                job["already_applied"] = True
+    except:
+        print("[WARN] ⚠️ Could not check 'Applied' footer text.")
+
+    # ✅ Already applied (fallback banner detection)
+    if not job["already_applied"]:
+        try:
+            applied_banner = li_element.locator("div.post-apply-timeline__content")
+            if applied_banner.count() and "Application submitted" in applied_banner.inner_text():
+                job["already_applied"] = True
+        except:
+            print("[WARN] ⚠️ Could not check fallback banner for 'Application submitted'.")
 
     return job

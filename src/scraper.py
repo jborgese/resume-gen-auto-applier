@@ -232,7 +232,7 @@ def scrape_jobs_from_search(
                     input("\n👉 [PAUSE] About to attempt LinkedIn Easy Apply. Inspect the page, then press Enter to continue…\n")
                     print("  [INFO] Attempting LinkedIn Easy Apply…")
                     try:
-                        ok = apply_to_job(job_page, pdf_path)
+                        ok = apply_to_job(job_page, pdf_path, job_url)
                         apply_status = "applied" if ok else "failed"
                         print(f"  [RESULT] Easy Apply {'✅ SUCCESS' if ok else '❌ FAILED'}")
                     except Exception as e:

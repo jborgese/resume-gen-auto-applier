@@ -16,7 +16,7 @@ LINKEDIN_PASSWORD = os.getenv("LINKEDIN_PASSWORD")
 PORTFOLIO = os.getenv("PORTFOLIO", None)
 
 # ===== Job Search Settings =====
-MAX_JOBS = 10 # Default max jobs to scrape
+MAX_JOBS = 20 # Default max jobs to scrape
 # Automatically attempt LinkedIn Easy Apply after resume generation
 AUTO_APPLY = True
 
