@@ -30,3 +30,24 @@ job_history:
       - Built RESTful APIs using Node.js and Express framework.
       - Collaborated with product managers to define technical requirements.
       - Optimized database queries resulting in 40% performance improvement.
+
+education:
+    - degree: Bachelor of Science in Computer Science
+        institution: Example University
+        graduation_date: 05-2020
+        location: Example City, EX
+    - degree: Associate of Science in Information Technology
+        institution: Example Community College
+        graduation_date: 05-2018
+        location: Sample Town, EX
+references:
+    - name: Jane Smith
+        title: Senior Software Engineer
+        contact:
+            email: jane.smith@example.com
+            phone: "(555) 987-6543"
+    - name: Bob Johnson
+        title: Database Developer
+        contact:
+            email: bob.johnson@example.com
+            phone: "(555) 246-8101"

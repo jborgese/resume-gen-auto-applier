@@ -45,7 +45,8 @@ def build_resume(data: dict) -> str:
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
     # ✅ Build unique output path
-    output_path = Path(f"output/resumes/{safe_title}_{safe_company}_{timestamp}.pdf")
+    last_name = sanitize_filename(data.get("name", "").split()[-1] if data.get("name") else "Unknown")
+    output_path = Path(f"output/resumes/{last_name}_{safe_title}_{safe_company}.pdf")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # ✅ Generate PDF
