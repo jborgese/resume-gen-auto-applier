@@ -154,6 +154,7 @@ def determine_answer(question: str) -> str:
 def check_and_upload_resume(job_page):
     """
     Upload the most recent generated resume if an upload section is present.
+    Only targets the resume upload field (ignores cover letter).
     """
     upload_button = job_page.locator('label.jobs-document-upload__upload-button')
     if not upload_button.count():
@@ -163,13 +164,16 @@ def check_and_upload_resume(job_page):
 
     print("[INFO] 📄 'Upload resume' button detected. Uploading resume...")
 
-    # Locate hidden file input
-    file_input = job_page.locator('div.js-jobs-document-upload__container input[type="file"]')
-    if not file_input.count():
-        print("[ERROR] ❌ File input missing — cannot upload resume.")
+    # ✅ Only select the resume upload field, not the cover letter
+    file_input = job_page.locator(
+        "div.js-jobs-document-upload__container input[type='file'][id*='upload-resume']"
+    )
+
+    if file_input.count() != 1:
+        print(f"[ERROR] ❌ Found {file_input.count()} resume inputs — expected 1.")
         return
 
-    # Find the newest resume file
+    # ✅ Find the newest resume file
     resume_dir = r"C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier\output\resumes"
     resume_files = glob.glob(os.path.join(resume_dir, "Borgese_*.pdf"))
     if not resume_files:
@@ -177,10 +181,13 @@ def check_and_upload_resume(job_page):
         return
 
     latest_resume = max(resume_files, key=os.path.getmtime)
+
+    # ✅ Upload to LinkedIn resume field
     file_input.set_input_files(latest_resume)
 
     print(f"[INFO] ✅ Resume uploaded: {latest_resume}")
     time.sleep(2)
+
 
 # --------------------------
 # Additional Questions (Radio + Dropdown)
@@ -428,28 +435,41 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
 
         # ✅ Confirm submission (LinkedIn sometimes refreshes the job page after submission)
         success = False
-
         try:
-            # 1️⃣ Wait a moment for DOM update
-            job_page.wait_for_timeout(3000)
+            job_page.wait_for_timeout(3000)  # small wait for DOM to refresh
 
-            # 2️⃣ Check if confirmation banner appears
+            # 1️⃣ Check for confirmation banner
             if job_page.locator('div.jobs-apply-confirmation').count() > 0:
                 print("[SUCCESS] ✅ Application submitted (confirmation banner found).")
                 success = True
+
+            # 2️⃣ Check for 'Application submitted' timeline content
+            elif job_page.locator('div.post-apply-timeline__content').filter(has_text="Application submitted").count() > 0:
+                print("[SUCCESS] ✅ Application submitted ('Application submitted' text found).")
+                success = True
+
+            # 3️⃣ Check for 'Submitted resume' download link
+            elif job_page.locator('a[aria-label="Download your submitted resume"]').count() > 0:
+                print("[SUCCESS] ✅ Application submitted ('Submitted resume' link present).")
+                success = True
+
+            # 4️⃣ Fallback: check if button now says 'Applied'
+            elif job_page.locator('button.jobs-apply-button[aria-label*="Applied"]').count() > 0:
+                print("[SUCCESS] ✅ Application submitted (button now shows 'Applied').")
+                success = True
+
             else:
-                # 3️⃣ Fallback: check if button now says 'Applied'
-                applied_button = job_page.locator('button.jobs-apply-button[aria-label*="Applied"]')
-                if applied_button.count():
-                    print("[SUCCESS] ✅ Application submitted (button changed to 'Applied').")
-                    success = True
-                else:
-                    print("[WARNING] ⚠️ No explicit confirmation detected. Assuming submit went through.")
-                    success = True  # ✅ treat as success since LinkedIn closed modal
+                print("[WARNING] ⚠️ No explicit confirmation detected — submission status uncertain.")
+                success = False  # <-- mark as failed instead of assuming success
 
         except Exception as e:
             print(f"[WARN] ⚠️ Could not confirm submission visually: {e}")
-            success = True  # ✅ assume success unless we see an error modal
+            success = False
+        
+                # ✅ Remove from JSON only if verified success
+        if success:
+            remove_from_json(job_url)
+
 
 
         # ✅ Close modal

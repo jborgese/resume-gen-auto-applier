@@ -32,8 +32,9 @@ def wait_for_job_cards_to_hydrate(page, timeout=10000):
 def parse_job_card(li_element) -> dict:
     """
     Parses a LinkedIn job card <li> Playwright element into structured job data.
-    ✅ Waits for card hydration (wrapper exists) before parsing.
-    ✅ Detects 'Applied' status directly from search list (footer) and fallback banners.
+    ✅ Waits for card hydration before parsing.
+    ✅ Detects 'Applied' status from search list (footer) and fallback banners.
+    ✅ Uses try/except on each field to prevent breaks from partial skeletons.
     """
     job = {
         "id": None,
@@ -45,39 +46,44 @@ def parse_job_card(li_element) -> dict:
         "easy_apply": False,
         "work_mode": None,
         "already_applied": False,
-        "hydrated": False  # <-- new field for debugging
+        "hydrated": False  # for debugging
     }
 
-    # ✅ --- HYDRATION CHECK ---
     wrapper_selector = "div.job-card-job-posting-card-wrapper, div.base-card"
     hydrated = False
     for attempt in range(5):  # wait up to ~5 seconds for hydration
         if li_element.locator(wrapper_selector).count():
             hydrated = True
             break
-        time.sleep(1)  # allow LinkedIn skeletons to hydrate
-
-    if not hydrated:
-        print("[WARN] ⚠️ Job card not fully hydrated (missing wrapper) — parsing anyway, may be partial.")
+        time.sleep(1)
     job["hydrated"] = hydrated
 
-    # ✅ 1. Grab job ID from wrapper
-    wrapper = li_element.locator(wrapper_selector)
-    if wrapper.count():
-        job_id = wrapper.get_attribute("data-job-id")
-        if job_id:
-            job["id"] = job_id
-            job["url"] = f"https://www.linkedin.com/jobs/view/{job_id}/"
+    if not hydrated:
+        print("[WARN] ⚠️ Job card not fully hydrated (missing wrapper) — parsing anyway.")
 
-    # ✅ 2. Fallback: grab <a> href if no wrapper
-    if not job["id"]:
-        job_link = li_element.locator("a[href*='/jobs/view/']").first
-        if job_link.count():
-            href = job_link.get_attribute("href")
-            if href and "/jobs/view/" in href:
-                job_id = href.split("/jobs/view/")[1].split("/")[0]
+    # ✅ ID from wrapper
+    try:
+        wrapper = li_element.locator(wrapper_selector)
+        if wrapper.count():
+            job_id = wrapper.get_attribute("data-job-id")
+            if job_id:
                 job["id"] = job_id
                 job["url"] = f"https://www.linkedin.com/jobs/view/{job_id}/"
+    except:
+        print("[WARN] ⚠️ Could not get job ID from wrapper.")
+
+    # ✅ Fallback: grab from <a> href
+    if not job["id"]:
+        try:
+            job_link = li_element.locator("a[href*='/jobs/view/']").first
+            if job_link.count():
+                href = job_link.get_attribute("href")
+                if href and "/jobs/view/" in href:
+                    job_id = href.split("/jobs/view/")[1].split("/")[0]
+                    job["id"] = job_id
+                    job["url"] = f"https://www.linkedin.com/jobs/view/{job_id}/"
+        except:
+            print("[WARN] ⚠️ Could not parse job link fallback.")
 
     # ✅ Title
     try:
@@ -85,24 +91,25 @@ def parse_job_card(li_element) -> dict:
         if title_el.count():
             job["title"] = title_el.inner_text().strip()
     except:
-        print("[WARN] ⚠️ Could not parse title — possibly still hydrating.")
+        print("[WARN] ⚠️ Could not parse title.")
 
     # ✅ Company
     try:
-        company_el = li_element.locator("div.artdeco-entity-lockup__subtitle, span.job-card-container__primary-description")
+        company_el = li_element.locator(
+            "div.artdeco-entity-lockup__subtitle, span.job-card-container__primary-description"
+        )
         if company_el.count():
             job["company"] = company_el.inner_text().strip()
     except:
         print("[WARN] ⚠️ Could not parse company.")
 
-    # ✅ Location
+    # ✅ Location + Work Mode Heuristic
     try:
         location_el = li_element.locator("div.artdeco-entity-lockup__caption, .job-card-container__metadata-item")
         if location_el.count():
             location_text = location_el.inner_text().strip()
             job["location"] = location_text
 
-            # Simple heuristic for work mode
             if "Remote" in location_text:
                 job["work_mode"] = "Remote"
             elif "Hybrid" in location_text:
@@ -112,13 +119,13 @@ def parse_job_card(li_element) -> dict:
     except:
         print("[WARN] ⚠️ Could not parse location.")
 
-    # ✅ Posted date
+    # ✅ Posted Date
     try:
         time_el = li_element.locator("time")
         if time_el.count():
             job["posted_date"] = time_el.get_attribute("datetime")
     except:
-        print("[WARN] ⚠️ No posted date found.")
+        print("[WARN] ⚠️ Could not parse posted date.")
 
     # ✅ Easy Apply
     try:
@@ -128,7 +135,7 @@ def parse_job_card(li_element) -> dict:
     except:
         print("[WARN] ⚠️ Could not verify Easy Apply status.")
 
-    # ✅ Already applied (list-level detection)
+    # ✅ Already applied (job card footer)
     try:
         applied_footer_item = li_element.locator("li.job-card-job-posting-card-wrapper__footer-item.t-bold")
         if applied_footer_item.count():
@@ -136,15 +143,15 @@ def parse_job_card(li_element) -> dict:
             if "Applied" in applied_text:
                 job["already_applied"] = True
     except:
-        print("[WARN] ⚠️ Could not check 'Applied' footer text.")
+        print("[WARN] ⚠️ Could not check 'Applied' footer.")
 
-    # ✅ Already applied (fallback banner detection)
+    # ✅ Fallback: job detail banner check (rare case where LinkedIn marks applied here)
     if not job["already_applied"]:
         try:
             applied_banner = li_element.locator("div.post-apply-timeline__content")
             if applied_banner.count() and "Application submitted" in applied_banner.inner_text():
                 job["already_applied"] = True
         except:
-            print("[WARN] ⚠️ Could not check fallback banner for 'Application submitted'.")
+            print("[WARN] ⚠️ Could not check 'Application submitted' banner.")
 
     return job
