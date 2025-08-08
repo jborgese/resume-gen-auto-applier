@@ -473,11 +473,16 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
 
 
         # ✅ Close modal
-        dismiss_button = job_page.locator('button[aria-label="Dismiss"]')
-        if dismiss_button.count():
-            dismiss_button.click()
-            print("[INFO] 🗙 Closed Easy Apply modal.")
-
+        # Try dismissing any modals without crashing
+        try:
+            dismiss_buttons = job_page.locator("button[aria-label='Dismiss']")
+            if dismiss_buttons.count() > 0:
+                dismiss_buttons.first.click()
+                print("[DEBUG] ✅ Clicked first dismiss button.")
+            else:
+                print("[DEBUG] ❎ No dismiss button found.")
+        except Exception as e:
+            print(f"[WARN] ⚠️ Could not dismiss modal: {e}")
         return success
 
     except Exception as e:
