@@ -16,7 +16,7 @@ LINKEDIN_PASSWORD = os.getenv("LINKEDIN_PASSWORD")
 PORTFOLIO = os.getenv("PORTFOLIO", None)
 
 # ===== Job Search Settings =====
-MAX_JOBS = 20 # Default max jobs to scrape
+MAX_JOBS = 3 # Default max jobs to scrape
 # Automatically attempt LinkedIn Easy Apply after resume generation
 AUTO_APPLY = True
 
@@ -27,4 +27,4 @@ DEFAULT_TEMPLATE = os.getenv("DEFAULT_TEMPLATE", "base_resume.html")
 # Example: ENABLE_EMAIL_NOTIFICATIONS, TRACK_APPLICATIONS, etc.
 
 # Toggle verbose, in‑browser debugging pauses
-DEBUG = True   # set to True when you want to step through in a visible browser
+DEBUG = False   # set to True when you want to step through in a visible browser

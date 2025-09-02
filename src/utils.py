@@ -190,7 +190,9 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
         print(f"[DEBUG] ✅ Final hydration: {hydrated_count}/{job_cards.count()} job cards hydrated after scroll.")
 
 
-def collect_job_links_with_pagination(page, base_url: str, max_jobs: int = 100, start_fresh: bool = False) -> list:
+from typing import Optional
+
+def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[int] = None, start_fresh: bool = False) -> list:
     """
     Collects job posting URLs by walking through LinkedIn job search pagination.
     ✅ Skips jobs already marked 'Applied' in the job list itself
@@ -199,12 +201,15 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: int = 100, 
     Args:
         page: Playwright page object.
         base_url: LinkedIn search URL (first page).
-        max_jobs: Max jobs to collect.
+        max_jobs: Max jobs to collect. If None, uses config.MAX_JOBS.
         start_fresh: If True, clears job_urls.json before scraping.
 
     Returns:
         list[str]: Deduplicated job posting URLs.
     """
+    if max_jobs is None:
+        max_jobs = config.MAX_JOBS
+
     print("[INFO] Collecting jobs using pagination…")
 
     filename = "job_urls.json"

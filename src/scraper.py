@@ -97,7 +97,7 @@ def scrape_jobs_from_search(
         addr = personal_info.get("address", {})
         city = addr.get("city")
         state = addr.get("state")
-        zip_code = addr.get("zip")
+        zip_code = str(addr.get("zip")) if addr.get("zip") is not None else None
         city_state_zip = " ".join(filter(None, [state, zip_code]))
         city_state_zip = ", ".join(filter(None, [city, city_state_zip])) if city or city_state_zip else ""
         address = ", ".join(filter(None, [
@@ -229,7 +229,8 @@ def scrape_jobs_from_search(
                 apply_status = "skipped"
                 apply_error = None
                 if config.AUTO_APPLY:
-                    input("\n👉 [PAUSE] About to attempt LinkedIn Easy Apply. Inspect the page, then press Enter to continue…\n")
+                    if config.DEBUG:
+                        input("\n👉 [PAUSE] About to attempt LinkedIn Easy Apply. Inspect the page, then press Enter to continue…\n")
                     print("  [INFO] Attempting LinkedIn Easy Apply…")
                     try:
                         ok = apply_to_job(job_page, pdf_path, job_url)

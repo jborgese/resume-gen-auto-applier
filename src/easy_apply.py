@@ -302,7 +302,15 @@ def handle_additional_questions(job_page):
             dropdown.select_option(saved_answer)
             print(f"[INFO] 🏷 Dropdown Q: '{question_text}' → '{saved_answer}'")
         except Exception as e:
-            print(f"[WARN] ⚠️ Could not select '{saved_answer}' for '{question_text}': {e}")
+            # Try to print available options if possible
+            try:
+                options = dropdown.locator("option")
+                option_texts = [options.nth(j).inner_text().strip() for j in range(options.count())]
+                print(f"[WARN] ⚠️ Could not select '{saved_answer}' for '{question_text}': {e}")
+                print(f"[WARN] ⚠️ Available options for '{question_text}': {option_texts}")
+            except Exception as opt_e:
+                print(f"[WARN] ⚠️ Could not select '{saved_answer}' for '{question_text}': {e}")
+                print(f"[WARN] ⚠️ Also failed to retrieve options: {opt_e}")
 
 # --------------------------
 # Main Easy Apply Flow
@@ -375,9 +383,10 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
 
         # ✅ Iterate through modal steps
         step_counter = 1
-        while True:
+        max_steps = 10  # Safeguard against infinite loops
+        while step_counter <= max_steps:
             if config.DEBUG:
-                print(f"[DEBUG] 👣 Step {step_counter}: Checking for questions, resume uploads, and buttons…")
+                print(f"[DEBUG] 👣 Step {step_counter}/{max_steps}: Checking for questions, resume uploads, and buttons…")
 
             # Handle resume upload (every step)
             check_and_upload_resume(job_page)
@@ -419,15 +428,21 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                     input("👉 [PAUSE] Press Enter to click REVIEW…")
                 review_btn.click()
                 print("[INFO] 🔄 Clicked Review button.")
-
             elif next_btn.count():
                 if config.DEBUG:
                     input("👉 [PAUSE] Press Enter to click NEXT…")
                 next_btn.click()
-                print("[INFO] ➡️ Clicked Next button.")
+                print(f"[INFO] ➡️ Clicked Next button (step {step_counter}/{max_steps}).")
 
             else:
                 print(f"[DEBUG] ⚠️ No Next/Review/Submit button at step {step_counter}. Stopping.")
+                break
+    
+            # Check if we hit the max steps limit
+            if step_counter > max_steps:
+                print(f"[ERROR] ❌ Reached maximum steps ({max_steps}) without completion. Possible infinite loop detected.")
+                remove_from_json(job_url)
+                return False
                 break
 
             time.sleep(1)
