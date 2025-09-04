@@ -54,7 +54,8 @@ def scrape_jobs_from_search(
         page.fill('input[id="password"]', password)
         page.click('button[type="submit"]')
         try:
-            page.wait_for_selector('input[placeholder="Search"]', timeout=30000)
+            # Wait for the profile name element to confirm successful login
+            page.wait_for_selector('h3.profile-card-name.text-heading-large', timeout=45000)
             print("[INFO] ✅ Logged in successfully.")
         except PlaywrightTimeout:
             print("[ERROR] ❌ Login failed (captcha/MFA?). Exiting.")
