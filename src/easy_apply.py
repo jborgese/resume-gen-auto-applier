@@ -7,7 +7,7 @@ from playwright.sync_api import Page
 import yaml
 import os
 
-YAML_PATH = "personal_info.yaml"
+YAML_PATH = str(config.FILE_PATHS["personal_info"])
 
 def step_through_easy_apply(job_page: Page) -> bool:
     """
@@ -19,7 +19,7 @@ def step_through_easy_apply(job_page: Page) -> bool:
             print(f"[DEBUG] 👣 Step {step}: Checking for buttons and form elements…")
 
         # ✅ If a resume upload section appears, handle it
-        upload_section = job_page.locator('label.jobs-document-upload__upload-button')
+        upload_section = job_page.locator(config.LINKEDIN_SELECTORS["resume_upload"]["upload_button"])
         if upload_section.count():
             if config.DEBUG:
                 print(f"[DEBUG] 📂 Resume upload section detected at step {step}.")
@@ -30,20 +30,20 @@ def step_through_easy_apply(job_page: Page) -> bool:
 
         # ✅ Footer buttons
         footer = job_page.locator("footer")
-        submit_btn = footer.locator('button[aria-label="Submit application"]')
-        review_btn = footer.locator('button[aria-label="Review your application"]')
-        next_btn = footer.locator('button[aria-label="Continue to next step"]')
+        submit_btn = footer.locator(config.LINKEDIN_SELECTORS["easy_apply"]["submit"])
+        review_btn = footer.locator(config.LINKEDIN_SELECTORS["easy_apply"]["review"])
+        next_btn = footer.locator(config.LINKEDIN_SELECTORS["easy_apply"]["next"])
 
         # 🔽 *** Special handling for SUBMIT step ***
         if submit_btn.count():
-            # ✅ Uncheck “Follow company” if it exists before clicking Submit
-            follow_checkbox = job_page.locator("input#follow-company-checkbox")
+            # ✅ Uncheck "Follow company" if it exists before clicking Submit
+            follow_checkbox = job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["follow_checkbox"])
             if follow_checkbox.count():
                 try:
                     if follow_checkbox.is_checked():
                         try:
                             print("[DEBUG] 🔄 Clicking label to uncheck…")
-                            job_page.locator("label[for='follow-company-checkbox']").click()
+                            job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["follow_label"]).click()
                         except:
                             print("[WARN] ⚠️ Label click failed, forcing via JS.")
                             job_page.evaluate("el => el.checked = false", follow_checkbox)
@@ -156,7 +156,7 @@ def check_and_upload_resume(job_page):
     Upload the most recent generated resume if an upload section is present.
     Only targets the resume upload field (ignores cover letter).
     """
-    upload_button = job_page.locator('label.jobs-document-upload__upload-button')
+    upload_button = job_page.locator(config.LINKEDIN_SELECTORS["resume_upload"]["upload_button"])
     if not upload_button.count():
         if config.DEBUG:
             print("[DEBUG] 🟦 No 'Upload resume' button on this step.")
@@ -165,16 +165,14 @@ def check_and_upload_resume(job_page):
     print("[INFO] 📄 'Upload resume' button detected. Uploading resume...")
 
     # ✅ Only select the resume upload field, not the cover letter
-    file_input = job_page.locator(
-        "div.js-jobs-document-upload__container input[type='file'][id*='upload-resume']"
-    )
+    file_input = job_page.locator(config.LINKEDIN_SELECTORS["resume_upload"]["file_input"])
 
     if file_input.count() != 1:
         print(f"[ERROR] ❌ Found {file_input.count()} resume inputs — expected 1.")
         return
 
     # ✅ Find the newest resume file
-    resume_dir = r"C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier\output\resumes"
+    resume_dir = str(config.FILE_PATHS["resumes_dir"])
     resume_files = glob.glob(os.path.join(resume_dir, "Borgese_*.pdf"))
     if not resume_files:
         print("[ERROR] ❌ No resume files found in output/resumes.")
@@ -200,7 +198,7 @@ def handle_additional_questions(job_page):
     data = load_personal_info()
 
     # --- RADIO QUESTIONS ---
-    for fieldset in job_page.locator("fieldset[data-test-form-builder-radio-button-form-component='true']").all():
+    for fieldset in job_page.locator(config.LINKEDIN_SELECTORS["form_fields"]["radio_fieldset"]).all():
         try:
             # Get the question text from the legend
             question_text = fieldset.locator("legend").inner_text().strip()
@@ -208,7 +206,7 @@ def handle_additional_questions(job_page):
 
             # ✅ 1. Check if LinkedIn already pre-filled an answer
             pre_selected = None
-            radio_inputs = fieldset.locator("input[type='radio']")
+            radio_inputs = fieldset.locator(config.LINKEDIN_SELECTORS["form_fields"]["radio_input"])
             for i in range(radio_inputs.count()):
                 if radio_inputs.nth(i).is_checked():
                     pre_selected = radio_inputs.nth(i).get_attribute("value")
@@ -239,8 +237,8 @@ def handle_additional_questions(job_page):
             if label.count():
                 try:
                     label.scroll_into_view_if_needed()
-                    time.sleep(0.2)  # Small pause for UI stability
-                    label.click(timeout=3000)
+                    time.sleep(config.DELAYS["ui_stability"])  # Small pause for UI stability
+                    label.click(timeout=config.TIMEOUTS["radio_click"])
                     print(f"[INFO] ✅ Selected '{saved_answer}' for radio Q: '{question_text}'")
                 except Exception as e:
                     print(f"[WARN] ⚠️ Normal click failed for '{saved_answer}' – using JS click. ({e})")
@@ -253,22 +251,14 @@ def handle_additional_questions(job_page):
             print(f"[ERROR] ❌ Radio handling failed for a question: {e}")
 
     # --- DROPDOWN QUESTIONS ---
-    dropdowns = job_page.locator("select.fb-dash-form-element__select-dropdown")
-    ignore_keywords = ["phone", "email address", "country code"]
-    SKIP_QUESTIONS = [
-        "email address", 
-        "phone country code", 
-        "mobile phone number",
-        "first name",
-        "last name",
-        "city",
-        "address"
-    ]
+    dropdowns = job_page.locator(config.LINKEDIN_SELECTORS["form_fields"]["dropdown"])
+    ignore_keywords = config.QUESTION_CONFIG["ignore_keywords"]
+    SKIP_QUESTIONS = config.QUESTION_CONFIG["skip_questions"]
     for i in range(dropdowns.count()):
         dropdown = dropdowns.nth(i)
 
         # Extract question text (label preceding the select)
-        label_locator = dropdown.locator('xpath=preceding-sibling::label[1]')
+        label_locator = dropdown.locator(config.LINKEDIN_SELECTORS["form_fields"]["dropdown_label"])
         question_text = label_locator.inner_text().strip() if label_locator.count() else "Unknown question"
 
         # ✅ Skip pre-filled LinkedIn profile fields
@@ -344,16 +334,32 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
 
     try:
         # ✅ Check if the job was already applied for
-        applied_banner = job_page.locator("div.post-apply-timeline__content")
+        applied_banner = job_page.locator(config.LINKEDIN_SELECTORS["application_status"]["applied_banner"])
         if applied_banner.count():
             text = applied_banner.inner_text().strip()
-            if "Application submitted" in text:
+            if config.LINKEDIN_SELECTORS["application_status"]["applied_text"] in text:
                 print("[INFO] ✅ Already applied for this job. Skipping Easy Apply.")
                 remove_from_json(job_url)
                 return False
 
+        # ✅ Check if job is no longer accepting applications
+        no_longer_accepting_selectors = config.LINKEDIN_SELECTORS["application_status"]["no_longer_accepting"]
+        
+        for selector in no_longer_accepting_selectors:
+            if job_page.locator(selector).count():
+                print("[INFO] ⚠️ Job is no longer accepting applications. Skipping and removing from list.")
+                remove_from_json(job_url)
+                return False
+        
+        # Also check the page text content for the phrase
+        page_text = job_page.inner_text("body").lower()
+        if "no longer accepting applications" in page_text:
+            print("[INFO] ⚠️ Job is no longer accepting applications. Skipping and removing from list.")
+            remove_from_json(job_url)
+            return False
+
         # ✅ Find & click Easy Apply button
-        easy_apply_button = job_page.locator('div.jobs-apply-button--top-card button.jobs-apply-button')
+        easy_apply_button = job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["button"])
         if not easy_apply_button.count():
             print("[ERROR] ❌ No Easy Apply button found.")
             remove_from_json(job_url)
@@ -368,22 +374,22 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         except:
             print("[WARN] ⚠️ Could not hover over Easy Apply button.")
 
-        delay = random.uniform(0.4, 0.8)
+        delay = random.uniform(*config.DELAYS["easy_apply_click"])
         if config.DEBUG:
             print(f"[DEBUG] ⏳ Pausing {delay:.2f}s before clicking Easy Apply.")
         time.sleep(delay)
 
-        easy_apply_button.click(timeout=5000)
+        easy_apply_button.click(timeout=config.TIMEOUTS["easy_apply_click"])
         print("[INFO] ✅ Easy Apply button clicked.")
 
         # ✅ Wait for modal
-        modal_selector = 'div.jobs-easy-apply-modal[role="dialog"], div.artdeco-modal.jobs-easy-apply-modal'
-        job_page.wait_for_selector(modal_selector, state="visible", timeout=20000)
+        modal_selector = config.LINKEDIN_SELECTORS["easy_apply"]["modal"]
+        job_page.wait_for_selector(modal_selector, state="visible", timeout=config.TIMEOUTS["modal_wait"])
         print("[INFO] ✅ Easy Apply modal detected.")
 
         # ✅ Iterate through modal steps
         step_counter = 1
-        max_steps = 10  # Safeguard against infinite loops
+        max_steps = config.RETRY_CONFIG["max_steps"]  # Safeguard against infinite loops
         while step_counter <= max_steps:
             if config.DEBUG:
                 print(f"[DEBUG] 👣 Step {step_counter}/{max_steps}: Checking for questions, resume uploads, and buttons…")
@@ -396,19 +402,19 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
 
             # ✅ Footer buttons
             footer = job_page.locator("footer")
-            submit_btn = footer.locator('button[aria-label="Submit application"]')
-            review_btn = footer.locator('button[aria-label="Review your application"]')
-            next_btn = footer.locator('button[aria-label="Continue to next step"]')
+            submit_btn = footer.locator(config.LINKEDIN_SELECTORS["easy_apply"]["submit"])
+            review_btn = footer.locator(config.LINKEDIN_SELECTORS["easy_apply"]["review"])
+            next_btn = footer.locator(config.LINKEDIN_SELECTORS["easy_apply"]["next"])
 
             if submit_btn.count():
                 # ✅ Make sure "Follow company" is unchecked
-                follow_checkbox = job_page.locator("input#follow-company-checkbox")
+                follow_checkbox = job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["follow_checkbox"])
                 if follow_checkbox.count():
                     try:
                         if follow_checkbox.is_checked():
                             try:
                                 print("[DEBUG] 🔄 Clicking label to uncheck…")
-                                job_page.locator("label[for='follow-company-checkbox']").click()
+                                job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["follow_label"]).click()
                             except:
                                 print("[WARN] ⚠️ Label click failed, forcing via JS.")
                                 job_page.evaluate("el => el.checked = false", follow_checkbox)
@@ -445,33 +451,21 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                 return False
                 break
 
-            time.sleep(1)
+            time.sleep(config.DELAYS["step_processing"])
             step_counter += 1
 
         # ✅ Confirm submission (LinkedIn sometimes refreshes the job page after submission)
         success = False
         try:
-            job_page.wait_for_timeout(3000)  # small wait for DOM to refresh
+            job_page.wait_for_timeout(config.TIMEOUTS["dom_refresh"])  # small wait for DOM to refresh
 
-            # 1️⃣ Check for confirmation banner
-            if job_page.locator('div.jobs-apply-confirmation').count() > 0:
-                print("[SUCCESS] ✅ Application submitted (confirmation banner found).")
-                success = True
-
-            # 2️⃣ Check for 'Application submitted' timeline content
-            elif job_page.locator('div.post-apply-timeline__content').filter(has_text="Application submitted").count() > 0:
-                print("[SUCCESS] ✅ Application submitted ('Application submitted' text found).")
-                success = True
-
-            # 3️⃣ Check for 'Submitted resume' download link
-            elif job_page.locator('a[aria-label="Download your submitted resume"]').count() > 0:
-                print("[SUCCESS] ✅ Application submitted ('Submitted resume' link present).")
-                success = True
-
-            # 4️⃣ Fallback: check if button now says 'Applied'
-            elif job_page.locator('button.jobs-apply-button[aria-label*="Applied"]').count() > 0:
-                print("[SUCCESS] ✅ Application submitted (button now shows 'Applied').")
-                success = True
+            # Check for confirmation using centralized selectors
+            confirmation_selectors = config.LINKEDIN_SELECTORS["application_status"]["confirmation"]
+            for i, selector in enumerate(confirmation_selectors):
+                if job_page.locator(selector).count() > 0:
+                    print(f"[SUCCESS] ✅ Application submitted (confirmation method {i+1} found).")
+                    success = True
+                    break
 
             else:
                 print("[WARNING] ⚠️ No explicit confirmation detected — submission status uncertain.")
@@ -490,7 +484,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         # ✅ Close modal
         # Try dismissing any modals without crashing
         try:
-            dismiss_buttons = job_page.locator("button[aria-label='Dismiss']")
+            dismiss_buttons = job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["dismiss"])
             if dismiss_buttons.count() > 0:
                 dismiss_buttons.first.click()
                 print("[DEBUG] ✅ Clicked first dismiss button.")
@@ -504,8 +498,8 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         print(f"[ERROR] ❌ Easy Apply failed: {e}")
         remove_from_json(job_url)   # ✅ REMOVE even on failure so bad jobs don’t clog
         try:
-            if job_page.locator('button[aria-label="Dismiss"]').count():
-                job_page.click('button[aria-label="Dismiss"]')
+            if job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["dismiss"]).count():
+                job_page.click(config.LINKEDIN_SELECTORS["easy_apply"]["dismiss"])
         except:
             pass
         return False

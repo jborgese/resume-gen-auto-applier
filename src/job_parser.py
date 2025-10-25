@@ -2,20 +2,22 @@ from typing import Union
 import src.config as config
 import time
 
-def wait_for_job_cards_to_hydrate(page, timeout=10000):
+def wait_for_job_cards_to_hydrate(page, timeout=None):
     """
     Ensures job <li> elements are fully populated (not placeholders).
     Will loop until all visible job cards have real content or timeout is reached.
     """
     import time
+    if timeout is None:
+        timeout = config.TIMEOUTS["job_cards"]
     start = time.time()
     while time.time() - start < timeout / 1000:
-        all_cards = page.locator("ul.semantic-search-results-list > li")
+        all_cards = page.locator(config.LINKEDIN_SELECTORS["job_search"]["job_cards"])
         hydrated = True
         for i in range(all_cards.count()):
             card = all_cards.nth(i)
             # If no wrapper, it's probably still a skeleton
-            wrapper = card.locator("div.job-card-job-posting-card-wrapper, div.base-card")
+            wrapper = card.locator(config.LINKEDIN_SELECTORS["job_search"]["job_wrapper"])
             if wrapper.count() == 0:
                 hydrated = False
                 break
@@ -49,7 +51,7 @@ def parse_job_card(li_element) -> dict:
         "hydrated": False  # for debugging
     }
 
-    wrapper_selector = "div.job-card-job-posting-card-wrapper, div.base-card"
+    wrapper_selector = config.LINKEDIN_SELECTORS["job_search"]["job_wrapper"]
     hydrated = False
     for attempt in range(5):  # wait up to ~5 seconds for hydration
         if li_element.locator(wrapper_selector).count():

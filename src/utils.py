@@ -69,7 +69,7 @@ def detect_scroll_target(page):
     Returns the best selector to scroll (either job list or window).
     """
 
-    job_list_selector = 'div.scaffold-layout__list.jobs-semantic-search-list'
+    job_list_selector = config.LINKEDIN_SELECTORS["job_search"]["job_list"]
 
     try:
         found = page.evaluate(f"""
@@ -115,10 +115,10 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
     ✅ Does NOT stop just because 25 <li> exist — checks for wrapper hydration.
     """
 
-    job_list_selector = "div.scaffold-layout__list.jobs-semantic-search-list"
+    job_list_selector = config.LINKEDIN_SELECTORS["job_search"]["job_list"]
 
     try:
-        page.wait_for_selector(job_list_selector, timeout=10000)
+        page.wait_for_selector(job_list_selector, timeout=config.TIMEOUTS["job_list"])
     except:
         print("[WARN] No job list found for scrolling.")
         return
@@ -126,7 +126,7 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
     if config.DEBUG:
         print(f"[DEBUG] 🎯 Starting robust scroll inside '{job_list_selector}'")
 
-    scroll_speed = 350
+    scroll_speed = config.SCROLL_CONFIG["base_speed"]
     loaded_last_round = 0
 
     for scroll_round in range(max_passes):
@@ -134,7 +134,7 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
         page.hover(job_list_selector)
 
         # ✅ Scroll down a bit (simulate human scrolling)
-        jitter = random.randint(-20, 20)
+        jitter = random.randint(-config.SCROLL_CONFIG["jitter_range"], config.SCROLL_CONFIG["jitter_range"])
         adjusted_scroll = max(100, scroll_speed + jitter)
 
         if config.DEBUG:
@@ -144,16 +144,16 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
         if config.DEBUG:
             print(f"[DEBUG] 🖱️ Scrolled {adjusted_scroll}px (base {scroll_speed}px + jitter {jitter}px)")
 
-        time.sleep(pause_between)
+        time.sleep(config.SCROLL_CONFIG["pause_between"])
 
         # ✅ Check job list hydration status
-        job_cards = page.locator("ul.semantic-search-results-list > li")
+        job_cards = page.locator(config.LINKEDIN_SELECTORS["job_search"]["job_cards"])
         total_cards = job_cards.count()
 
         # Count hydrated cards (have wrapper div)
         hydrated_count = 0
         for i in range(total_cards):
-            card_wrapper = job_cards.nth(i).locator("div.job-card-job-posting-card-wrapper")
+            card_wrapper = job_cards.nth(i).locator(config.LINKEDIN_SELECTORS["job_search"]["job_wrapper"])
             if card_wrapper.count():
                 hydrated_count += 1
 
@@ -168,22 +168,22 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
 
         # ✅ Adjust speed based on hydration progress
         if hydrated_count == loaded_last_round:
-            scroll_speed = max(150, scroll_speed - 50)
+            scroll_speed = max(config.SCROLL_CONFIG["min_speed"], scroll_speed - 50)
             if config.DEBUG:
                 print(f"[DEBUG] ⏬ No new hydration — slowing scroll to {scroll_speed}px")
             time.sleep(1.5)
         else:
-            scroll_speed = min(500, scroll_speed + 25)
+            scroll_speed = min(config.SCROLL_CONFIG["max_speed"], scroll_speed + 25)
             if config.DEBUG:
                 print(f"[DEBUG] ⏫ New jobs hydrated — speeding scroll to {scroll_speed}px")
 
         loaded_last_round = hydrated_count
 
     # ✅ Final hydration summary
-    job_cards = page.locator("ul.semantic-search-results-list > li")
+    job_cards = page.locator(config.LINKEDIN_SELECTORS["job_search"]["job_cards"])
     hydrated_count = 0
     for i in range(job_cards.count()):
-        if job_cards.nth(i).locator("div.job-card-job-posting-card-wrapper").count():
+        if job_cards.nth(i).locator(config.LINKEDIN_SELECTORS["job_search"]["job_wrapper"]).count():
             hydrated_count += 1
 
     if config.DEBUG:
@@ -227,8 +227,8 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
 
     # ✅ Detect total job count from the search page
     try:
-        page.wait_for_selector("div.t-black--light.pv4.text-body-small.mr2", timeout=5000)
-        total_jobs_text = page.inner_text("div.t-black--light.pv4.text-body-small.mr2")
+        page.wait_for_selector(config.LINKEDIN_SELECTORS["job_search"]["total_jobs"], timeout=config.TIMEOUTS["total_jobs"])
+        total_jobs_text = page.inner_text(config.LINKEDIN_SELECTORS["job_search"]["total_jobs"])
         total_jobs = int("".join(filter(str.isdigit, total_jobs_text)))
     except:
         print("[WARN] ⚠️ Could not find total job count. Defaulting to 1 page.")
@@ -245,12 +245,12 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
         paged_url = f"{base_url}&start={start_offset}"
 
         print(f"[INFO] 🔄 Navigating to page {page_num+1} (start={start_offset})")
-        page.goto(paged_url, timeout=45000)
+        page.goto(paged_url, timeout=config.TIMEOUTS["search_page"])
 
         # ✅ Wait for job list container
-        job_list_selector = "div.scaffold-layout__list.jobs-semantic-search-list"
+        job_list_selector = config.LINKEDIN_SELECTORS["job_search"]["job_list"]
         try:
-            page.wait_for_selector(job_list_selector, timeout=10000)
+            page.wait_for_selector(job_list_selector, timeout=config.TIMEOUTS["job_list"])
             print("[INFO] ✅ Found job list container.")
         except:
             print(f"[WARN] ⚠️ Job list container not found on page {page_num+1}. Skipping.")
@@ -263,10 +263,10 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
             print("[DEBUG] 🖱️ Mouse hovered over job list container.")
 
         # ✅ Human-like scrolling
-        scroll_job_list_human_like(page, max_passes=15, pause_between=1.0)
+        scroll_job_list_human_like(page, max_passes=config.RETRY_CONFIG["max_scroll_passes"], pause_between=config.SCROLL_CONFIG["pause_between"])
 
         # ✅ Parse job cards
-        job_cards = page.locator("ul.semantic-search-results-list > li")
+        job_cards = page.locator(config.LINKEDIN_SELECTORS["job_search"]["job_cards"])
         job_count = job_cards.count()
         if config.DEBUG:
             print(f"[DEBUG] Found {job_count} <li> elements after scroll on page {page_num+1}.")

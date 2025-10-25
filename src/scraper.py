@@ -13,6 +13,7 @@ from src.config import MAX_JOBS
 from typing import Optional
 import yaml
 import json
+import time
 
 def scrape_jobs_from_search(
     search_url: str,
@@ -48,22 +49,78 @@ def scrape_jobs_from_search(
 
         # — LOGIN —
         print("[INFO] Navigating to LinkedIn login page…")
-        page.goto("https://www.linkedin.com/login", timeout=30000)
+        page.goto("https://www.linkedin.com/login", timeout=config.TIMEOUTS["login"])
         print("[INFO] Entering credentials…")
-        page.fill('input[id="username"]', email)
-        page.fill('input[id="password"]', password)
-        page.click('button[type="submit"]')
+        page.fill(config.LINKEDIN_SELECTORS["login"]["username"], email)
+        page.fill(config.LINKEDIN_SELECTORS["login"]["password"], password)
+        page.click(config.LINKEDIN_SELECTORS["login"]["submit"])
+        
+        # Give LinkedIn a moment to process the login
+        time.sleep(config.DELAYS["login_processing"])
+        
+        # Check for login success using multiple methods
+        login_detected = False
+        
         try:
-            # Wait for the profile name element to confirm successful login
-            page.wait_for_selector('h3.profile-card-name.text-heading-large', timeout=45000)
-            print("[INFO] ✅ Logged in successfully.")
-        except PlaywrightTimeout:
-            print("[ERROR] ❌ Login failed (captcha/MFA?). Exiting.")
+            # Method 1: Check URL - if we're redirected away from login page, likely successful
+            current_url = page.url
+            if "/login" not in current_url and ("linkedin.com/feed" in current_url or "linkedin.com/in/" in current_url):
+                print(f"[INFO] ✅ Logged in successfully (URL redirect detected: {current_url}).")
+                login_detected = True
+            
+            # Method 2: Check page title
+            elif not login_detected:
+                page_title = page.title()
+                if "Feed" in page_title or "LinkedIn" in page_title and "Sign In" not in page_title:
+                    print(f"[INFO] ✅ Logged in successfully (page title indicates success: '{page_title}').")
+                    login_detected = True
+            
+            # Method 3: Try common selectors as fallback
+            if not login_detected:
+                login_success_selectors = config.LINKEDIN_SELECTORS["login_success"]
+                
+                for selector in login_success_selectors:
+                    try:
+                        page.wait_for_selector(selector, timeout=config.TIMEOUTS["login_success"])
+                        print(f"[INFO] ✅ Logged in successfully (detected via: {selector}).")
+                        login_detected = True
+                        break
+                    except PlaywrightTimeout:
+                        continue
+            
+            # If still no success, check for error conditions
+            if not login_detected:
+                # Check for common error indicators
+                if page.locator('div.challenge').count() > 0:
+                    print("[ERROR] ❌ Login blocked by security challenge/CAPTCHA. Please log in manually first.")
+                elif page.locator('[data-test-id="sign-in-error"]').count() > 0:
+                    print("[ERROR] ❌ Invalid credentials. Please check your LINKEDIN_EMAIL and LINKEDIN_PASSWORD.")
+                elif page.locator('.form__input--error').count() > 0:
+                    print("[ERROR] ❌ Login form error detected. Please check your credentials.")
+                elif "/login" in page.url:
+                    print("[ERROR] ❌ Still on login page - credentials may be incorrect or CAPTCHA required.")
+                else:
+                    print("[ERROR] ❌ Login failed - unable to detect successful login. This could be due to:")
+                    print("         • CAPTCHA/MFA challenge")
+                    print("         • Invalid credentials") 
+                    print("         • LinkedIn UI changes")
+                    print("         • Rate limiting")
+                
+                if config.DEBUG:
+                    print(f"[DEBUG] Current URL: {page.url}")
+                    print(f"[DEBUG] Page title: {page.title()}")
+                    print("[DEBUG] Press Enter to continue or Ctrl+C to exit...")
+                    input()
+                
+                return []
+                
+        except Exception as e:
+            print(f"[ERROR] ❌ Unexpected error during login: {e}")
             return []
 
         # — GO TO SEARCH PAGE —
         print(f"[INFO] Navigating to job search URL: {search_url}")
-        page.goto(search_url, timeout=45000)
+        page.goto(search_url, timeout=config.TIMEOUTS["search_page"])
         if config.DEBUG:
             print("\n[DEBUG] Search page loaded. Verify jobs list is visible in the browser.")
 
@@ -132,7 +189,7 @@ def scrape_jobs_from_search(
                 job_page = context.new_page()
 
                 try:
-                    job_page.goto(job_url, timeout=30000)
+                    job_page.goto(job_url, timeout=config.TIMEOUTS["job_page"])
                 except TargetClosedError:
                     print(f"[WARN] LinkedIn closed the tab unexpectedly for {job_url}. Skipping.")
                     continue
@@ -141,30 +198,23 @@ def scrape_jobs_from_search(
                     continue
 
                 # ✅ Detect expired/unavailable job
-                if job_page.locator("div.jobs-unavailable").count():
+                if job_page.locator(config.LINKEDIN_SELECTORS["job_detail"]["unavailable"]).count():
                     print(f"[INFO] Job {job_url} is unavailable or expired. Skipping.")
                     job_page.close()
                     continue
 
-                job_page.wait_for_selector("h1", timeout=15000)
+                job_page.wait_for_selector("h1", timeout=config.TIMEOUTS["job_title"])
 
                 # --- SCRAPE METADATA ---
-                title_sel = (
-                    'h1.t-24.t-bold.inline,'
-                    'h1.jobs-unified-top-card__job-title,'
-                    'h1.top-card-layout__title'
-                )
+                title_sel = ",".join(config.LINKEDIN_SELECTORS["job_detail"]["title"])
                 titles = job_page.locator(title_sel).all_inner_texts()
                 title = titles[0].strip() if titles else "N/A"
 
-                comp_sel = (
-                    'div.job-details-jobs-unified-top-card__company-name a,'
-                    'a.topcard__org-name-link'
-                )
+                comp_sel = ",".join(config.LINKEDIN_SELECTORS["job_detail"]["company"])
                 comps = job_page.locator(comp_sel).all_inner_texts()
                 company = comps[0].strip() if comps else "N/A"
 
-                locs = job_page.locator('span.tvm__text.tvm__text--low-emphasis').all_inner_texts()
+                locs = job_page.locator(config.LINKEDIN_SELECTORS["job_detail"]["location"]).all_inner_texts()
                 location = "N/A"
                 for loc in locs:
                     clean_loc = loc.strip()
@@ -173,7 +223,7 @@ def scrape_jobs_from_search(
                         break
 
                 # ✅ Description (scraped ONCE)
-                raw_desc = job_page.inner_text('div.jobs-description__content').strip() if job_page.locator('div.jobs-description__content').count() else ""
+                raw_desc = job_page.inner_text(config.LINKEDIN_SELECTORS["job_detail"]["description"]).strip() if job_page.locator(config.LINKEDIN_SELECTORS["job_detail"]["description"]).count() else ""
                 desc = clean_text(raw_desc)
                 print(f"  [INFO] Description captured ({len(raw_desc)} → {len(desc)} chars after cleaning)")
 
