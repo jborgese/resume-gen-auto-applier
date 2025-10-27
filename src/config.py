@@ -25,6 +25,10 @@ AUTO_APPLY = os.getenv("AUTO_APPLY", "true").lower() == "true"  # LinkedIn Easy 
 DEFAULT_TEMPLATE = os.getenv("DEFAULT_TEMPLATE", "base_resume.html")
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"  # Debug mode
 
+# ===== Browser Configuration =====
+HEADLESS_MODE = os.getenv("HEADLESS_MODE", "false").lower() == "true"  # Run browser in headless mode
+ENABLE_BROWSER_MONITORING = os.getenv("ENABLE_BROWSER_MONITORING", "false").lower() == "true"  # Monitor browser connection
+
 # ===== Timeout Configuration =====
 TIMEOUTS = {
     "page_load": int(os.getenv("TIMEOUT_PAGE_LOAD", "30000")),
@@ -59,6 +63,16 @@ LINKEDIN_SELECTORS = {
         "submit": 'button[type="submit"]',
     },
     
+    # Login fallback selectors
+    "login_fallbacks": [
+        'input[name="session_key"]',
+        'input[name="session_password"]',
+        'input[type="email"]',
+        'input[type="password"]',
+        'button:has-text("Sign in")',
+        'button:has-text("Log in")'
+    ],
+    
     # Login success detection
     "login_success": [
         'nav[aria-label="Primary"]',
@@ -89,21 +103,87 @@ LINKEDIN_SELECTORS = {
             'a.topcard__org-name-link'
         ],
         "location": 'span.tvm__text.tvm__text--low-emphasis',
-        "description": 'div.jobs-description__content',
+        "description": [
+            'div.jobs-description__content',
+            'div.jobs-description-content__text',
+            'div.jobs-box__html-content',
+            'div.jobs-unified-top-card__job-description',
+            'div.jobs-details__main-content',
+            'div[data-test-id="job-description"]',
+            'div.jobs-box__html-content div',
+            'div.jobs-description div',
+            'div.jobs-unified-top-card__content--main div',
+            'div.jobs-details__main-content div'
+        ],
         "unavailable": "div.jobs-unavailable",
     },
     
     # Easy Apply selectors
     "easy_apply": {
-        "button": 'div.jobs-apply-button--top-card button.jobs-apply-button',
-        "modal": 'div.jobs-easy-apply-modal[role="dialog"], div.artdeco-modal.jobs-easy-apply-modal',
-        "submit": 'button[aria-label="Submit application"]',
-        "review": 'button[aria-label="Review your application"]',
-        "next": 'button[aria-label="Continue to next step"]',
-        "follow_checkbox": "input#follow-company-checkbox",
-        "follow_label": "label[for='follow-company-checkbox']",
-        "dismiss": 'button[aria-label="Dismiss"]',
+        "button": [
+            'div.jobs-apply-button--top-card button.jobs-apply-button',
+            'button[data-test-id="apply-button"]',
+            'button:has-text("Easy Apply")',
+            'button:has-text("Apply")',
+            'button[aria-label*="Apply"]',
+            'div.jobs-apply-button button',
+            'button.jobs-apply-button'
+        ],
+        "modal": [
+            'div.jobs-easy-apply-modal[role="dialog"]',
+            'div.artdeco-modal.jobs-easy-apply-modal',
+            'div[role="dialog"]',
+            'div.artdeco-modal',
+            'div.jobs-easy-apply-modal'
+        ],
+        "submit": [
+            'button[aria-label="Submit application"]',
+            'button:has-text("Submit application")',
+            'button:has-text("Submit")',
+            'button[data-test-id="submit-button"]'
+        ],
+        "review": [
+            'button[aria-label="Review your application"]',
+            'button:has-text("Review your application")',
+            'button:has-text("Review")',
+            'button[data-test-id="review-button"]'
+        ],
+        "next": [
+            'button[aria-label="Continue to next step"]',
+            'button:has-text("Continue to next step")',
+            'button:has-text("Next")',
+            'button:has-text("Continue")',
+            'button[data-test-id="next-button"]'
+        ],
+        "follow_checkbox": [
+            "input#follow-company-checkbox",
+            "input[name='follow-company']",
+            "input[type='checkbox'][id*='follow']"
+        ],
+        "follow_label": [
+            "label[for='follow-company-checkbox']",
+            "label[for*='follow']"
+        ],
+        "dismiss": [
+            'button[aria-label="Dismiss"]',
+            'button:has-text("Dismiss")',
+            'button:has-text("Close")',
+            'button[data-test-id="dismiss-button"]'
+        ],
     },
+    
+    # Easy Apply fallback selectors
+    "easy_apply_fallbacks": [
+        'button:has-text("Easy Apply")',
+        'button:has-text("Apply")',
+        'button[aria-label*="Apply"]',
+        'button[data-test-id*="apply"]',
+        'div[role="dialog"]',
+        'div.artdeco-modal',
+        'button:has-text("Submit")',
+        'button:has-text("Next")',
+        'button:has-text("Continue")'
+    ],
     
     # Resume upload selectors
     "resume_upload": {

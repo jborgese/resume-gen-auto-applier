@@ -61,7 +61,7 @@ def parse_job_card(li_element) -> dict:
     job["hydrated"] = hydrated
 
     if not hydrated:
-        print("[WARN] ⚠️ Job card not fully hydrated (missing wrapper) — parsing anyway.")
+        print("[WARN] ⚠️ Job card not fully hydrated (missing wrapper)  parsing anyway.")
 
     # ✅ ID from wrapper
     try:

@@ -1,0 +1,359 @@
+# Resume Generator & Auto-Applicator - Cursor AI Rules
+
+## ⚠️ COMMAND EXECUTION - READ THIS FIRST ⚠️
+🚨 **STOP! Before running ANY command, you MUST read and follow this section** 🚨
+
+### THE FUNDAMENTAL RULES
+1. **NEVER execute python, pip, playwright, or ANY project command without first navigating to:**
+   ```
+   C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier
+   ```
+
+2. **NEVER run Python scripts without checking if virtual environment is activated!**
+   - Always check for virtual environment first
+   - Starting scripts without proper environment causes dependency issues
+   - See "Python Environment Management" section below for detailed instructions
+
+### CRITICAL: Auto-Ran Command Blocks
+🚨 **"Auto-Ran" commands create FRESH shell instances that start from the home directory!** 🚨
+
+**NEVER use "Auto-Ran" for project commands.** Instead, use the `run_terminal_cmd` tool which maintains shell state.
+
+❌ **WRONG - Auto-Ran creates fresh shell:**
+```
+Auto-Ran command: python main.py
+```
+This will ALWAYS fail because it starts from `C:\Users\Nipply Nathan\` (no Python project files).
+
+✅ **CORRECT - Use run_terminal_cmd:**
+```powershell
+cd "C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier"; python main.py
+```
+
+### MANDATORY Pre-Command Workflow
+Every single time you need to run a command, follow this exact sequence:
+
+**Step 1:** Navigate to project root (ALWAYS do this first)
+```powershell
+cd "C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier"
+```
+
+**Step 2:** Verify you're in the correct location
+```powershell
+Test-Path requirements.txt
+```
+This MUST return `True`. If it returns `False`, STOP - you're in the wrong directory.
+
+**Step 3:** Activate virtual environment (if exists)
+```powershell
+if (Test-Path "venv\Scripts\activate.ps1") { .\venv\Scripts\activate.ps1 }
+```
+
+**Step 4:** Only NOW can you run your actual command
+```powershell
+python main.py
+```
+
+### Why This Matters
+If you run `python main.py` from `C:\Users\Nipply Nathan\` (the home directory), you will get:
+```
+python: can't open file 'C:\Users\Nipply Nathan\main.py': [Errno 2] No such file or directory
+```
+This is the MOST COMMON FAILURE MODE for agents. Don't let this happen.
+
+### PowerShell Syntax (Windows Environment)
+- **Use semicolons (`;`) to chain commands, NEVER `&&`**
+
+  ❌ WRONG: `cd "path" && python main.py`
+  ✅ CORRECT: `cd "C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier"; python main.py`
+
+- PowerShell uses `-and`, `-or`, `-not` for logic (not `&&`, `||`, `!`)
+- Use `Test-Path` instead of checking file existence with bash commands
+
+### Python Environment Management
+🚨 **CRITICAL: Always check for virtual environment before running Python scripts!** 🚨
+
+**NEVER run Python scripts without first checking for virtual environment!**
+
+Before running any Python command, ALWAYS check if virtual environment exists and is activated:
+```powershell
+# Check for virtual environment
+if (Test-Path "venv\Scripts\activate.ps1") {
+    Write-Host "Virtual environment found. Activating..."
+    .\venv\Scripts\activate.ps1
+} else {
+    Write-Host "No virtual environment found. Consider creating one with: python -m venv venv"
+}
+```
+
+**If virtual environment is not activated, you may get import errors or dependency issues!**
+
+### Complete Example: Running Python Script
+```powershell
+# Step 1: Navigate
+cd "C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier"
+
+# Step 2: Verify location
+Test-Path requirements.txt
+
+# Step 3: Activate virtual environment
+if (Test-Path "venv\Scripts\activate.ps1") { .\venv\Scripts\activate.ps1 }
+
+# Step 4: Run script
+python main.py
+```
+
+### Alternative: Check for Python Processes
+If you need to check for running Python processes:
+```powershell
+# Check for running Python processes
+Get-Process -Name "python" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*resume*" -or $_.CommandLine -like "*main.py*" }
+```
+
+### When Virtual Environment Is Missing
+If you find no virtual environment:
+1. **Create one** with `python -m venv venv`
+2. **Activate it** with `.\venv\Scripts\activate.ps1`
+3. **Install dependencies** with `pip install -r requirements.txt`
+4. **Then run your script**
+
+Example response when no venv found:
+```powershell
+Write-Host "⚠️  No virtual environment found!"
+Write-Host "💡 Create one with: python -m venv venv"
+Write-Host "💡 Then activate with: .\venv\Scripts\activate.ps1"
+Write-Host "💡 Install dependencies with: pip install -r requirements.txt"
+```
+
+### Tool Usage Requirements
+- **ALWAYS use `run_terminal_cmd` tool for project commands** - it maintains shell state
+- **NEVER use "Auto-Ran" blocks for project commands** - they create fresh shells from home directory
+- **Chain navigation and verification in single commands** when possible:
+  ```powershell
+  cd "C:\Users\Nipply Nathan\Documents\GitHub\resume-gen-auto-applier"; Test-Path requirements.txt; python main.py
+  ```
+- **If you must use separate commands, always include navigation in each one**
+
+---
+
+## Project Overview
+Resume Generator & Auto-Applicator is a Python automation tool that:
+- Scrapes job listings from LinkedIn and other job sites
+- Extracts keywords and requirements from job descriptions
+- Uses LLMs (OpenAI, Anthropic) to tailor resume content
+- Generates ATS-friendly PDF resumes using WeasyPrint
+- Automates LinkedIn Easy Apply process via Playwright
+
+## Core Principles
+1. **Automation First**: Maximize automation while maintaining reliability
+2. **Error Handling**: Robust error handling for web scraping and automation
+3. **Privacy & Security**: Handle personal data securely, never log sensitive information
+4. **Maintainability**: Clean, well-documented code that's easy to modify
+5. **Performance**: Efficient scraping and processing to avoid rate limits
+6. **Reliability**: Handle edge cases and network issues gracefully
+
+## Tech Stack Preferences
+
+### Core Python
+- Python 3.9+ (tested with 3.9.7, avoid 3.13 due to spaCy issues)
+- Virtual environment management with `venv`
+- Type hints for better code maintainability
+- Pathlib for cross-platform file handling
+
+### Web Automation & Scraping
+- Playwright for browser automation and job scraping
+- BeautifulSoup4 for HTML parsing when needed
+- Requests for HTTP operations
+- Selenium as fallback if Playwright fails
+
+### NLP & AI
+- spaCy for keyword extraction and NLP processing
+- OpenAI API for resume tailoring
+- Anthropic API as backup LLM
+- LangChain for LLM orchestration
+
+### Document Generation
+- WeasyPrint for PDF generation (requires GTK on Windows)
+- python-docx for Word document manipulation
+- Jinja2 for HTML template rendering
+
+### Data & Configuration
+- YAML for configuration files (personal_info.yaml)
+- JSON for data storage and keyword weights
+- python-dotenv for environment variable management
+- Pandas for data manipulation when needed
+
+## Code Standards
+
+### Python
+- Use type hints for all function parameters and return values
+- Follow PEP 8 style guidelines
+- Use f-strings for string formatting
+- Prefer pathlib.Path over os.path
+- Use dataclasses for structured data
+- No bare except clauses - always specify exception types
+
+### Error Handling
+- Use specific exception handling (ValueError, FileNotFoundError, etc.)
+- Log errors with appropriate context
+- Implement retry logic for network operations
+- Graceful degradation when services are unavailable
+- Never expose sensitive information in error messages
+
+### Web Scraping
+- Implement proper delays between requests
+- Use user-agent rotation when possible
+- Handle rate limiting and CAPTCHAs gracefully
+- Respect robots.txt and terms of service
+- Implement exponential backoff for retries
+
+### Security
+- Never log passwords, API keys, or personal information
+- Use environment variables for sensitive configuration
+- Validate all user inputs
+- Sanitize data before processing
+- Implement proper session management for LinkedIn
+
+### Performance
+- Use async/await for I/O operations when beneficial
+- Implement caching for repeated operations
+- Optimize database queries and file operations
+- Monitor memory usage for large data processing
+- Use generators for large datasets
+
+### Debug Logging
+When a user requests debug logging to be added to a file:
+
+1. **Check for Existing Helper**: Always search the file first for existing debug logging helper functions
+   - Look for patterns like `debug_log`, `log_debug`, `debug`, or similar utilities
+   - Check for existing debug configuration or constants (e.g., `DEBUG`, `VERBOSE`)
+
+2. **Cognitive Complexity Management**:
+   - **DO** create or use a helper function to centralize debug logic
+   - **DON'T** add inline debug statements that increase cognitive complexity
+   - Debug helpers should handle conditional logging, formatting, and context
+
+3. **Helper Function Pattern**:
+   ```python
+   # Preferred pattern: Centralized debug helper
+   def debug_log(message: str, data: Any = None) -> None:
+       if os.getenv('DEBUG', 'false').lower() == 'true':
+           print(f"[DEBUG] {message}", data if data is not None else "")
+   ```
+
+4. **Revision Strategy**:
+   - If a helper exists but doesn't meet the user's needs, revise it rather than creating a new one
+   - Extend existing helpers with additional parameters or functionality
+   - Maintain consistent debug patterns within the same file
+
+5. **Best Practices**:
+   - Include module/class name in debug messages for context
+   - Use appropriate log levels (debug, info, warning, error)
+   - Never log sensitive user data (see Security section)
+   - Consider using a debug flag that can be toggled via environment variable
+   - Use logging module for production code
+
+6. **Example Implementation**:
+   ```python
+   # Helper function at top of file (after imports)
+   import logging
+   
+   def create_debug_logger(module_name: str) -> logging.Logger:
+       logger = logging.getLogger(module_name)
+       if os.getenv('DEBUG', 'false').lower() == 'true':
+           logger.setLevel(logging.DEBUG)
+       return logger
+   
+   debug = create_debug_logger('JobScraper')
+   
+   # Usage in code
+   debug.debug('Scraping job', {'url': job_url})
+   debug.warning('Failed to extract title', {'error': str(e)})
+   ```
+
+7. **When to Skip Helpers**:
+   - Single debug statement in entire file (use inline)
+   - Temporary debugging during development (with TODO comment to remove)
+   - Error boundaries or critical error logging (always keep these simple)
+
+## Prohibited Patterns
+- ❌ No hardcoded credentials or API keys
+- ❌ No bare except clauses without specific exception handling
+- ❌ No synchronous operations that could be async
+- ❌ No direct file operations without proper error handling
+- ❌ No logging of sensitive information (passwords, API keys, personal data)
+- ❌ No infinite loops without proper exit conditions
+- ❌ No blocking operations in main thread without timeouts
+- ❌ No direct database connections without connection pooling
+
+## File Organization
+```
+resume-gen-auto-applier/
+├── src/                    # Source code modules
+│   ├── scraper.py         # Job scraping logic
+│   ├── keyword_extractor.py # NLP and keyword extraction
+│   ├── resume_builder.py  # Resume generation
+│   ├── easy_apply.py     # LinkedIn automation
+│   ├── llm_summary.py    # LLM integration
+│   ├── config.py         # Configuration management
+│   └── utils.py          # Utility functions
+├── templates/             # HTML/Word templates
+├── output/               # Generated resumes and logs
+│   └── resumes/         # PDF resumes
+├── venv/                # Virtual environment
+├── personal_info.yaml   # User information
+├── requirements.txt     # Python dependencies
+└── main.py             # Entry point
+```
+
+## Testing Requirements
+- All new features require unit tests using pytest
+- Web scraping functions require integration tests
+- Mock external API calls in tests
+- Test error handling and edge cases
+- Use fixtures for common test data
+- Test both success and failure scenarios
+
+## Documentation
+- Add docstrings for all functions and classes
+- Include type hints in docstrings
+- Document configuration options and environment variables
+- Update README.md for significant feature additions
+- Document API rate limits and usage guidelines
+- **All standalone documentation markdown files must be placed in `./docs/` or relevant subdirectories within `./docs/`**
+  - Examples: `./docs/INSTALLATION.md`, `./docs/CONFIGURATION.md`, `./docs/TROUBLESHOOTING.md`
+  - Organize by topic: use subdirectories for feature-specific documentation if needed
+  - Never create documentation files in the project root (except README.md)
+
+## Git Workflow
+- Use conventional commit format: `type(scope): description`
+- Types: feat, fix, docs, style, refactor, test, chore
+- Run `black` and `isort` before committing
+- Ensure tests pass before pushing
+- Use meaningful commit messages
+
+## When Suggesting Code
+1. Always consider error handling and edge cases
+2. Verify Python type hints are correct and specific
+3. Ensure proper exception handling
+4. Include relevant tests
+5. Follow existing code patterns and file organization
+6. Check that solution handles network issues gracefully
+7. Avoid introducing new dependencies unless necessary
+8. Consider performance implications of web scraping
+
+## LinkedIn Automation Guidelines
+- Implement proper delays between actions to avoid detection
+- Handle login failures gracefully
+- Respect LinkedIn's rate limits and terms of service
+- Implement proper session management
+- Handle CAPTCHAs and verification challenges
+- Log automation activities for debugging
+- Provide manual override options when automation fails
+
+## Environment Setup
+- Always check for virtual environment before running scripts
+- Install dependencies with `pip install -r requirements.txt`
+- Set up Playwright browsers with `playwright install`
+- Configure environment variables in `.env` file
+- Test all external dependencies before deployment
