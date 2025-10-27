@@ -21,6 +21,7 @@ from src.keyword_weighting import weigh_keywords
 from src.resume_builder import build_resume
 from src.easy_apply import apply_to_job
 from src.llm_summary import generate_resume_summary
+from src.human_behavior import HumanBehavior
 from src.error_handler import (
     retry_with_backoff, ErrorContext, SelectorFallback, 
     LinkedInUIChangeHandler, safe_execute, handle_playwright_errors,
@@ -196,23 +197,46 @@ def scrape_jobs_from_search(
         if saved_cookies:
             print("[INFO] Found saved LinkedIn cookies - attempting to use existing session")
             try:
-                # Add cookies to context before navigating
-                # Note: We need to ensure cookies have proper structure for Playwright
-                context.add_cookies(saved_cookies)  # type: ignore
-                print("[INFO] Loaded saved cookies into browser context")
+                # Prepare cookies for Playwright (ensure proper format)
+                prepared_cookies = cookie_manager.prepare_cookies_for_playwright(
+                    saved_cookies, 
+                    url="https://www.linkedin.com"
+                )
                 
-                # Navigate to LinkedIn to use the cookies
+                # Navigate to LinkedIn domain first (required for setting cookies)
+                page.goto("https://www.linkedin.com", timeout=config.TIMEOUTS["login"])
+                time.sleep(1)  # Brief pause for domain to load
+                
+                # Add cookies to context
+                context.add_cookies(prepared_cookies)  # type: ignore
+                print(f"[INFO] Loaded {len(prepared_cookies)} cookies into browser context")
+                
+                # Navigate to feed to verify session
                 page.goto("https://www.linkedin.com/feed/", timeout=config.TIMEOUTS["login"])
-                time.sleep(3)  # Give page time to load
+                
+                # Simulate human-like viewing before checking login status
+                HumanBehavior.simulate_hesitation(1.0, 2.0)
+                HumanBehavior.simulate_viewport_movement(page)
                 
                 # Check if we're logged in
                 current_url = page.url
-                if "/feed" in current_url or "/in/" in current_url:
+                page_title = page.title()
+                
+                # Multiple checks for login success
+                login_indicators = [
+                    "/feed" in current_url,
+                    "/in/" in current_url,
+                    "LinkedIn" in page_title and "Feed" in page_title,
+                    "Login" not in page_title and "Sign In" not in page_title
+                ]
+                
+                if any(login_indicators):
                     print("[INFO] Successfully logged in using saved cookies - skipping login flow")
-                    # Skip login and proceed to job search
+                    # Refresh cookies to update session
+                    cookie_manager.refresh_cookies_if_needed(context, page)
                     skip_login = True
                 else:
-                    print("[INFO] Saved cookies appear to be expired - falling back to login")
+                    print("[INFO] Saved cookies appear to be expired or invalid - falling back to login")
                     skip_login = False
                     
             except Exception as e:
@@ -454,10 +478,25 @@ def scrape_jobs_from_search(
             # Save cookies after successful login
             if login_detected:
                 try:
+                    # Wait a moment for all cookies to be set
+                    time.sleep(2)
+                    
                     cookies = context.cookies()
                     # Convert to dict if needed
                     cookies_dict = [dict(c) for c in cookies]
-                    cookie_manager.save_cookies(cookies_dict)
+                    
+                    # Filter to only LinkedIn cookies for security
+                    linkedin_cookies = [
+                        c for c in cookies_dict 
+                        if 'linkedin.com' in c.get('domain', '') or 'linkedin.com' in c.get('url', '')
+                    ]
+                    
+                    if linkedin_cookies:
+                        cookie_manager.save_cookies(linkedin_cookies)
+                        print(f"[INFO] Saved {len(linkedin_cookies)} LinkedIn session cookies")
+                    else:
+                        logger.warning("No LinkedIn cookies found to save")
+                        
                 except Exception as e:
                     logger.warning(f"Failed to save cookies: {e}")
                     print(f"[WARN] Could not save cookies for future sessions: {e}")
@@ -648,8 +687,21 @@ def scrape_jobs_from_search(
 
                     # Add delay between job page requests to avoid rate limiting
                     if idx > 1:  # Skip delay for first job
-                        delay = random.uniform(2, 5)  # Random delay between 2-5 seconds
-                        print(f"  [INFO] Waiting {delay:.1f}s to avoid rate limiting...")
+                        # Adaptive delay: increase if we've seen failures
+                        base_min, base_max = config.DELAYS["between_jobs"]
+                        
+                        # Track consecutive failures to increase delay
+                        if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                            scrape_jobs_from_search.consecutive_failures = 0
+                        
+                        # Increase delay if we've had recent failures
+                        if scrape_jobs_from_search.consecutive_failures > 0:
+                            multiplier = 1 + (scrape_jobs_from_search.consecutive_failures * 0.5)
+                            delay = random.uniform(base_min * multiplier, base_max * multiplier)
+                            print(f"  [INFO] Waiting {delay:.1f}s (increased due to {scrape_jobs_from_search.consecutive_failures} recent failure(s))...")
+                        else:
+                            delay = random.uniform(base_min, base_max)
+                            print(f"  [INFO] Waiting {delay:.1f}s to avoid rate limiting...")
                         time.sleep(delay)
                     
                     try:
@@ -660,12 +712,34 @@ def scrape_jobs_from_search(
                         continue
                     except PlaywrightTimeout:
                         print(f"[WARN] Timeout loading {job_url}. Skipping.")
+                        
+                        # Track timeout failures for adaptive delay
+                        if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                            scrape_jobs_from_search.consecutive_failures = 0
+                        scrape_jobs_from_search.consecutive_failures += 1
+                        
+                        # Wait longer after timeout
+                        wait_time = random.uniform(*config.DELAYS["graphql_failure_wait"])
+                        print(f"  [WARN] Waiting {wait_time:.1f}s after timeout...")
+                        time.sleep(wait_time)
+                        
                         job_context.add_context("error", "PlaywrightTimeout")
                         continue
                     except Exception as e:
                         error_msg = str(e)
                         if "ERR_HTTP_RESPONSE_CODE_FAILURE" in error_msg:
                             print(f"[WARN] LinkedIn rate limiting detected for {job_url}. Skipping.")
+                            
+                            # Track rate limit failures for adaptive delay
+                            if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                                scrape_jobs_from_search.consecutive_failures = 0
+                            scrape_jobs_from_search.consecutive_failures += 2  # Rate limits are more serious
+                            
+                            # Wait longer after rate limit detection
+                            wait_time = random.uniform(*config.DELAYS["rate_limit_wait"])
+                            print(f"  [WARN] Waiting {wait_time:.1f}s after rate limit detection...")
+                            time.sleep(wait_time)
+                            
                             job_context.add_context("error", "RateLimited")
                             continue
                         elif "net::ERR_" in error_msg:
@@ -684,6 +758,45 @@ def scrape_jobs_from_search(
                         continue
 
                     job_page.wait_for_selector("h1", timeout=config.TIMEOUTS["job_title"])
+                    
+                    # Simulate human viewing the page
+                    HumanBehavior.simulate_viewport_movement(job_page)
+                    HumanBehavior.simulate_hesitation(0.5, 1.2)  # Pause to "read" job title
+                    
+                    # Wait for loading spinners and skeleton loaders to disappear (LinkedIn GraphQL failures can cause long loading)
+                    if config.DEBUG:
+                        print(f"  [DEBUG] Checking for loading indicators...")
+                    
+                    # Check for skeleton loaders (LinkedIn's loading placeholders)
+                    skeleton_selector = ".scaffold-skeleton-container, .job-description-skeleton__text-container"
+                    # Check for loading spinners
+                    loading_spinner_selector = "div[aria-busy='true'][alt*='Loading'], .loading-spinner, .artdeco-loader"
+                    
+                    max_wait_time = 15  # Max 15 seconds to wait for content to load
+                    wait_start = time.time()
+                    
+                    while time.time() - wait_start < max_wait_time:
+                        skeletons = job_page.locator(skeleton_selector)
+                        spinners = job_page.locator(loading_spinner_selector)
+                        
+                        # Check if both skeletons and spinners are gone
+                        if skeletons.count() == 0 and spinners.count() == 0:
+                            if config.DEBUG:
+                                print(f"  [DEBUG] No loading indicators detected")
+                            break
+                        else:
+                            if config.DEBUG:
+                                skeleton_count = skeletons.count()
+                                spinner_count = spinners.count()
+                                print(f"  [DEBUG] Loading indicators detected: {skeleton_count} skeletons, {spinner_count} spinners")
+                            time.sleep(0.5)
+                    
+                    # Check if we timed out waiting for content
+                    if time.time() - wait_start >= max_wait_time:
+                        print(f"  [WARN] Job description appears to be stuck loading (GraphQL failures likely). This may be bot prevention.")
+                    
+                    # Additional wait for page to stabilize after loaders disappear
+                    time.sleep(1.0)
 
                     # --- SCRAPE METADATA ---
                     title_sel = ",".join(config.LINKEDIN_SELECTORS["job_detail"]["title"])
@@ -703,31 +816,95 @@ def scrape_jobs_from_search(
                             break
 
                     # [OK] Description (scraped ONCE) with fallback selectors
+                    # Wait for description to actually load (not just selector to exist)
                     raw_desc = ""
                     desc_selectors = config.LINKEDIN_SELECTORS["job_detail"]["description"]
                     
-                    # Try each selector until we find one that works
-                    for selector in desc_selectors if isinstance(desc_selectors, list) else [desc_selectors]:
-                        try:
-                            if job_page.locator(selector).count() > 0:
-                                raw_desc = job_page.inner_text(selector).strip()
-                                if raw_desc:  # Only use if we got actual content
-                                    break
-                        except Exception as e:
-                            continue
+                    # Wait for description content to load with timeout
+                    description_loaded = False
+                    max_wait_time = 15  # Maximum seconds to wait for description
+                    wait_start = time.time()
                     
-                    # If no description found with selectors, try a more general approach
-                    if not raw_desc:
+                    if config.DEBUG:
+                        print(f"  [DEBUG] Waiting for job description to load (max {max_wait_time}s)...")
+                    
+                    while time.time() - wait_start < max_wait_time and not description_loaded:
+                        # Try each selector until we find one that works
+                        for selector in desc_selectors if isinstance(desc_selectors, list) else [desc_selectors]:
+                            try:
+                                desc_locator = job_page.locator(selector)
+                                if desc_locator.count() > 0:
+                                    # Use .first() to avoid strict mode violation when multiple elements match
+                                    # Check if description actually has content (not just skeleton/loading)
+                                    raw_desc = desc_locator.first.inner_text().strip()
+                                    
+                                    # Skip if it's just skeleton/loading text
+                                    if "scaffold-skeleton" in raw_desc.lower() or len(raw_desc) < 50:
+                                        continue
+                                    
+                                    # Description is loaded if it has substantial content
+                                    # LinkedIn often shows loading spinners/placeholders, so check for real content
+                                    if len(raw_desc) > 100:  # At least 100 chars indicates real content
+                                        description_loaded = True
+                                        if config.DEBUG:
+                                            print(f"  [DEBUG] Description loaded ({len(raw_desc)} chars)")
+                                        break
+                            except Exception as e:
+                                if config.DEBUG:
+                                    # Only log strict mode violations as warnings, not every retry
+                                    if "strict mode violation" not in str(e):
+                                        print(f"  [DEBUG] Selector check failed: {e}")
+                                continue
+                        
+                        if not description_loaded:
+                            # Wait a bit before retrying
+                            time.sleep(0.5)
+                    
+                    # If description still not loaded, try fallback approach
+                    if not description_loaded and not raw_desc:
+                        if config.DEBUG:
+                            print(f"  [DEBUG] Description not loaded via selectors, trying fallback...")
                         try:
-                            # Try to find any div that might contain job description
-                            potential_desc = job_page.locator('div:has-text("Requirements"), div:has-text("Responsibilities"), div:has-text("Qualifications")').first
+                            # Try to find any div that might contain job description using more specific selector
+                            potential_desc = job_page.locator('#job-details').first
                             if potential_desc.count() > 0:
                                 raw_desc = potential_desc.inner_text().strip()
-                        except:
-                            pass
+                                # Skip skeleton content
+                                if "scaffold-skeleton" not in raw_desc.lower() and len(raw_desc) > 100:
+                                    description_loaded = True
+                        except Exception as e:
+                            if config.DEBUG:
+                                print(f"  [DEBUG] Fallback check failed: {e}")
+                    
+                    if not description_loaded:
+                        if len(raw_desc) == 0:
+                            print(f"  [WARN] Job description failed to load - likely GraphQL/bot prevention. Skipping job.")
+                            
+                            # Track failures for adaptive delay
+                            if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                                scrape_jobs_from_search.consecutive_failures = 0
+                            scrape_jobs_from_search.consecutive_failures += 1
+                            
+                            # If multiple failures, wait longer before next job
+                            if scrape_jobs_from_search.consecutive_failures >= 3:
+                                wait_time = random.uniform(*config.DELAYS["rate_limit_wait"])
+                                print(f"  [WARN] Multiple failures detected. Waiting {wait_time:.1f}s before next job to avoid rate limiting...")
+                                time.sleep(wait_time)
+                            
+                            job_page.close()
+                            continue
+                        else:
+                            print(f"  [WARN] Job description may not have fully loaded (only {len(raw_desc)} chars). Continuing anyway...")
+                            # Reset failure counter on partial success
+                            if hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                                scrape_jobs_from_search.consecutive_failures = max(0, scrape_jobs_from_search.consecutive_failures - 1)
                     
                     desc = clean_text(raw_desc)
                     print(f"  [INFO] Description captured ({len(raw_desc)} -> {len(desc)} chars after cleaning)")
+
+                    # Simulate reading the job description (human-like behavior)
+                    HumanBehavior.simulate_reading(raw_desc[:500], min_time=1.0, max_time=3.0)  # Read first 500 chars
+                    HumanBehavior.simulate_viewport_movement(job_page)  # Occasional scroll while reading
 
                     # [OK] Extract & weight keywords
                     kws = extract_keywords(desc)
@@ -856,6 +1033,10 @@ def scrape_jobs_from_search(
                             apply_status = "applied" if ok else "failed"
                             print(f"  [RESULT] Easy Apply {'SUCCESS' if ok else 'FAILED'}")
                             job_context.add_context("apply_status", apply_status)
+                            
+                            # Reset failure counter on successful job processing
+                            if ok and hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                                scrape_jobs_from_search.consecutive_failures = 0
                                 
                         except LinkedInUIError as e:
                             apply_status = "failed"
@@ -881,6 +1062,10 @@ def scrape_jobs_from_search(
                         "apply_status": apply_status,
                         "apply_error":  apply_error,
                     })
+                    
+                    # Reset failure counter on successful job processing (even if Easy Apply disabled)
+                    if hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                        scrape_jobs_from_search.consecutive_failures = 0
 
                     job_page.close()
 

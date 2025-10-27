@@ -275,6 +275,9 @@ DELAYS = {
     "modal_wait": float(os.getenv("DELAY_MODAL_WAIT", "1.2")),
     "step_processing": float(os.getenv("DELAY_STEP_PROCESSING", "1.0")),
     "dom_refresh": float(os.getenv("DELAY_DOM_REFRESH", "3.0")),
+    "between_jobs": (5.0, 10.0),  # Random delay between 5-10 seconds between jobs
+    "rate_limit_wait": (10.0, 15.0),  # Wait time when rate limiting detected
+    "graphql_failure_wait": (8.0, 12.0),  # Wait time after GraphQL failures
 }
 
 # ===== Validation =====
