@@ -5,6 +5,7 @@ import time
 from typing import Dict, List, Optional, Any
 from playwright.sync_api import Page, Route, Request, Response
 import re
+import src.config as config
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ class ResourceErrorHandler:
             r'ERR_INTERNET_DISCONNECTED',
             r'ERR_CONNECTION_RESET',
             r'ERR_CONNECTION_REFUSED',
+            r'TypeError: network error',
         ]
         
         # LinkedIn GraphQL error patterns
@@ -62,6 +64,17 @@ class ResourceErrorHandler:
             r'voyager.*\.',
             r'cannot read properties of undefined',
             r'reading \'attributes\'',
+        ]
+        
+        # LinkedIn-specific warning patterns (harmless browser behavior)
+        self.linkedin_warning_patterns = [
+            r'BooleanExpression with operator "numericGreaterThan" had an expression that evaluated to null',
+            r'EventSource\'s response has a Content-Type specifying an unsupported type',
+            r'Content contains tags or attributes that are not allowed',
+            r'HTML sanitized:',
+            r'Attribute \'exception\.tags\' of type \'object\' could not be converted to a proto attribute',
+            r'<!--\[if IE \d+\]><span></span><!\[endif\]-->',
+            r'TypeError: network error',
         ]
     
     def setup_error_handling(self):
@@ -124,11 +137,24 @@ class ResourceErrorHandler:
                     logger.debug(f"Suppressed LinkedIn GraphQL error: {msg.text[:100]}...")
                     return  # Don't log these as they're expected
             
+            # Check for LinkedIn-specific warnings (harmless browser behavior)
+            for pattern in self.linkedin_warning_patterns:
+                if re.search(pattern, message_text, re.IGNORECASE):
+                    if config.SUPPRESS_CONSOLE_WARNINGS:
+                        logger.debug(f"Suppressed LinkedIn warning: {msg.text[:100]}...")
+                        return  # Don't log these as they're expected LinkedIn frontend behavior
+                    else:
+                        logger.debug(f"LinkedIn warning (suppression disabled): {msg.text[:100]}...")
+                        break  # Continue to normal logging
+            
             # Log other console messages normally
             if msg.type == 'error':
                 logger.error(f"Console error: {msg.text}")
             elif msg.type == 'warning':
-                logger.warning(f"Console warning: {msg.text}")
+                if config.SUPPRESS_CONSOLE_WARNINGS:
+                    logger.debug(f"Console warning (suppressed): {msg.text}")
+                else:
+                    logger.warning(f"Console warning: {msg.text}")
             else:
                 logger.debug(f"Console {msg.type}: {msg.text}")
                 
@@ -193,6 +219,16 @@ class ResourceErrorHandler:
                 })
                 logger.debug(f"Suppressed LinkedIn GraphQL/page error: {error_str[:100]}...")
                 return  # Don't log these as they're expected LinkedIn frontend errors
+            
+            # Check for LinkedIn-specific warnings in page errors
+            for pattern in self.linkedin_warning_patterns:
+                if re.search(pattern, error_text, re.IGNORECASE):
+                    if config.SUPPRESS_CONSOLE_WARNINGS:
+                        logger.debug(f"Suppressed LinkedIn page warning: {error_str[:100]}...")
+                        return  # Don't log these as they're expected LinkedIn frontend behavior
+                    else:
+                        logger.debug(f"LinkedIn page warning (suppression disabled): {error_str[:100]}...")
+                        break  # Continue to normal logging
             
             # Log other page errors
             logger.error(f"Page error: {error_str}")

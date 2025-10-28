@@ -237,6 +237,8 @@ def scrape_jobs_from_search(
                     skip_login = True
                 else:
                     print("[INFO] Saved cookies appear to be expired or invalid - falling back to login")
+                    # Delete invalid cookies to prevent future issues
+                    cookie_manager.delete_cookies()
                     skip_login = False
                     
             except Exception as e:
@@ -895,40 +897,130 @@ def scrape_jobs_from_search(
                     HumanBehavior.simulate_viewport_movement(job_page)
                     HumanBehavior.simulate_hesitation(0.5, 1.2)  # Pause to "read" job title
                     
-                    # Wait for loading spinners and skeleton loaders to disappear (LinkedIn GraphQL failures can cause long loading)
+                    # Enhanced GraphQL failure detection and handling
                     if config.DEBUG:
-                        print(f"  [DEBUG] Checking for loading indicators...")
+                        print(f"  [DEBUG] Checking for GraphQL loading indicators...")
                     
-                    # Check for skeleton loaders (LinkedIn's loading placeholders)
-                    skeleton_selector = ".scaffold-skeleton-container, .job-description-skeleton__text-container"
-                    # Check for loading spinners
-                    loading_spinner_selector = "div[aria-busy='true'][alt*='Loading'], .loading-spinner, .artdeco-loader"
+                    # Check for GraphQL-specific loading indicators
+                    graphql_loading_selectors = [
+                        ".scaffold-skeleton-container",
+                        ".job-description-skeleton__text-container", 
+                        "div[aria-busy='true'][alt*='Loading']",
+                        ".loading-spinner",
+                        ".artdeco-loader",
+                        ".jobs-unified-top-card__loading",
+                        ".jobs-description__loading"
+                    ]
                     
-                    max_wait_time = 15  # Max 15 seconds to wait for content to load
+                    # Also check for GraphQL error indicators
+                    graphql_error_selectors = [
+                        "div:has-text('Something went wrong')",
+                        "div:has-text('Try refreshing the page')",
+                        ".error-page",
+                        ".jobs-unavailable",
+                        "[data-test-id*='error']"
+                    ]
+                    
+                    max_wait_time = 20  # Increased to 20 seconds for GraphQL
                     wait_start = time.time()
+                    graphql_error_detected = False
                     
                     while time.time() - wait_start < max_wait_time:
-                        skeletons = job_page.locator(skeleton_selector)
-                        spinners = job_page.locator(loading_spinner_selector)
+                        # Check for GraphQL errors first
+                        for error_selector in graphql_error_selectors:
+                            if job_page.locator(error_selector).count() > 0:
+                                print(f"  [ERROR] GraphQL error detected: {error_selector}")
+                                graphql_error_detected = True
+                                break
                         
-                        # Check if both skeletons and spinners are gone
-                        if skeletons.count() == 0 and spinners.count() == 0:
+                        if graphql_error_detected:
+                            break
+                        
+                        # Check for loading indicators
+                        loading_detected = False
+                        for loading_selector in graphql_loading_selectors:
+                            if job_page.locator(loading_selector).count() > 0:
+                                loading_detected = True
+                                break
+                        
+                        if not loading_detected:
                             if config.DEBUG:
-                                print(f"  [DEBUG] No loading indicators detected")
+                                print(f"  [DEBUG] No GraphQL loading indicators detected")
                             break
                         else:
                             if config.DEBUG:
-                                skeleton_count = skeletons.count()
-                                spinner_count = spinners.count()
-                                print(f"  [DEBUG] Loading indicators detected: {skeleton_count} skeletons, {spinner_count} spinners")
+                                print(f"  [DEBUG] GraphQL loading indicators still present, waiting...")
                             time.sleep(0.5)
+                    
+                    # Handle GraphQL errors
+                    if graphql_error_detected:
+                        print(f"  [ERROR] GraphQL error detected on job page - likely bot detection")
+                        print(f"  [INFO] This may indicate:")
+                        print(f"    • LinkedIn has detected automated behavior")
+                        print(f"    • Session cookies are invalid/expired")
+                        print(f"    • Rate limiting is in effect")
+                        print(f"    • IP address is flagged")
+                        
+                        # Try to recover session by refreshing cookies
+                        print(f"  [INFO] Attempting session recovery...")
+                        try:
+                            cookie_refreshed = cookie_manager.refresh_cookies_if_needed(context, job_page)
+                            if cookie_refreshed:
+                                print(f"  [INFO] Session cookies refreshed - retrying job page")
+                                # Close current page and retry
+                                job_page.close()
+                                time.sleep(2)
+                                
+                                # Create new page and retry
+                                retry_page = context.new_page()
+                                retry_page.goto(job_url, timeout=config.TIMEOUTS["job_page"])
+                                time.sleep(3)  # Give page time to load
+                                
+                                # Check if GraphQL error is resolved
+                                retry_content = retry_page.inner_text("body").lower()
+                                if "something went wrong" not in retry_content and "try refreshing" not in retry_content:
+                                    print(f"  [SUCCESS] Session recovery successful - continuing with job")
+                                    job_page = retry_page  # Use the recovered page
+                                    graphql_error_detected = False  # Reset error flag
+                                else:
+                                    print(f"  [WARN] Session recovery failed - GraphQL error persists")
+                                    retry_page.close()
+                            else:
+                                print(f"  [WARN] Could not refresh session cookies")
+                        except Exception as recovery_error:
+                            print(f"  [WARN] Session recovery failed: {recovery_error}")
+                        
+                        if graphql_error_detected:  # If still has error after recovery attempt
+                            # Track GraphQL failures for adaptive delay
+                            if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                                scrape_jobs_from_search.consecutive_failures = 0
+                            scrape_jobs_from_search.consecutive_failures += 3  # GraphQL errors are serious
+                            
+                            # Wait longer after GraphQL errors
+                            wait_time = random.uniform(*config.DELAYS["graphql_failure_wait"])
+                            print(f"  [WARN] Waiting {wait_time:.1f}s after GraphQL error...")
+                            time.sleep(wait_time)
+                            
+                            job_page.close()
+                            continue
                     
                     # Check if we timed out waiting for content
                     if time.time() - wait_start >= max_wait_time:
-                        print(f"  [WARN] Job description appears to be stuck loading (GraphQL failures likely). This may be bot prevention.")
+                        print(f"  [WARN] Job description appears to be stuck loading (GraphQL timeout).")
+                        print(f"  [INFO] This may indicate GraphQL API issues or bot detection.")
+                        
+                        # Track timeout failures
+                        if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
+                            scrape_jobs_from_search.consecutive_failures = 0
+                        scrape_jobs_from_search.consecutive_failures += 2
+                        
+                        # Wait after timeout
+                        wait_time = random.uniform(*config.DELAYS["graphql_failure_wait"])
+                        print(f"  [WARN] Waiting {wait_time:.1f}s after GraphQL timeout...")
+                        time.sleep(wait_time)
                     
                     # Additional wait for page to stabilize after loaders disappear
-                    time.sleep(1.0)
+                    time.sleep(1.5)  # Increased wait time
 
                     # --- SCRAPE METADATA ---
                     title_sel = ",".join(config.LINKEDIN_SELECTORS["job_detail"]["title"])

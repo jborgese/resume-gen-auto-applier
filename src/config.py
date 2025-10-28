@@ -28,6 +28,7 @@ DEBUG = os.getenv("DEBUG", "false").lower() == "true"  # Debug mode
 # ===== Browser Configuration =====
 HEADLESS_MODE = os.getenv("HEADLESS_MODE", "false").lower() == "true"  # Run browser in headless mode
 ENABLE_BROWSER_MONITORING = os.getenv("ENABLE_BROWSER_MONITORING", "false").lower() == "true"  # Monitor browser connection
+SUPPRESS_CONSOLE_WARNINGS = os.getenv("SUPPRESS_CONSOLE_WARNINGS", "true").lower() == "true"  # Suppress harmless browser warnings
 
 # ===== Timeout Configuration =====
 TIMEOUTS = {
@@ -276,8 +277,9 @@ DELAYS = {
     "step_processing": float(os.getenv("DELAY_STEP_PROCESSING", "1.0")),
     "dom_refresh": float(os.getenv("DELAY_DOM_REFRESH", "3.0")),
     "between_jobs": (5.0, 10.0),  # Random delay between 5-10 seconds between jobs
-    "rate_limit_wait": (10.0, 15.0),  # Wait time when rate limiting detected
-    "graphql_failure_wait": (8.0, 12.0),  # Wait time after GraphQL failures
+    "rate_limit_wait": (15.0, 25.0),  # Increased wait time when rate limiting detected
+    "graphql_failure_wait": (12.0, 20.0),  # Increased wait time after GraphQL failures
+    "session_recovery_wait": (3.0, 5.0),  # Wait time for session recovery attempts
 }
 
 # ===== Validation =====

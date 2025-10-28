@@ -64,8 +64,8 @@ class EnhancedBrowserConfig:
             '--disable-extensions-file-access-check',
             '--disable-extensions-http-throttling',
             '--disable-extensions-except',
-            '--disable-plugins',
-            '--disable-plugins-discovery',
+            # REMOVED: '--disable-plugins' - may interfere with LinkedIn functionality
+            # REMOVED: '--disable-plugins-discovery' - may interfere with LinkedIn functionality
             
             # Privacy and tracking prevention
             '--disable-background-timer-throttling',
@@ -75,13 +75,13 @@ class EnhancedBrowserConfig:
             '--disable-sync',
             '--disable-background-mode',
             
-            # Resource blocking and optimization
+            # Resource optimization (but keep JavaScript for LinkedIn GraphQL)
             '--disable-images',  # Block images to reduce resource usage
             '--disable-javascript-harmony-shipping',
-            '--disable-javascript',
+            # REMOVED: '--disable-javascript' - LinkedIn requires JavaScript for GraphQL
             '--disable-java',
             '--disable-flash',
-            '--disable-plugins',
+            # REMOVED: '--disable-plugins' - may interfere with LinkedIn functionality
             
             # Network and performance
             '--aggressive-cache-discard',
@@ -179,6 +179,15 @@ class EnhancedBrowserConfig:
                  message.includes('net::ERR_BLOCKED_BY_CLIENT'))) {
                 return; // Suppress these errors
             }
+            // Suppress LinkedIn-specific warnings
+            if (message.includes('BooleanExpression with operator "numericGreaterThan"') ||
+                message.includes('EventSource\'s response has a Content-Type') ||
+                message.includes('Content contains tags or attributes that are not allowed') ||
+                message.includes('HTML sanitized:') ||
+                message.includes('Attribute \'exception.tags\' of type \'object\'') ||
+                message.includes('TypeError: network error')) {
+                return; // Suppress these LinkedIn warnings
+            }
             originalError.apply(console, args);
         };
         
@@ -186,7 +195,12 @@ class EnhancedBrowserConfig:
         const originalWarn = console.warn;
         console.warn = function(...args) {
             const message = args.join(' ');
-            if (message.includes('Third-party cookie will be blocked')) {
+            if (message.includes('Third-party cookie will be blocked') ||
+                message.includes('BooleanExpression with operator "numericGreaterThan"') ||
+                message.includes('EventSource\'s response has a Content-Type') ||
+                message.includes('Content contains tags or attributes that are not allowed') ||
+                message.includes('HTML sanitized:') ||
+                message.includes('Attribute \'exception.tags\' of type \'object\'')) {
                 return; // Suppress these warnings
             }
             originalWarn.apply(console, args);
@@ -321,7 +335,7 @@ class EnhancedBrowserConfig:
                 route.abort()
                 return
             
-            # Block common tracking and analytics
+            # Block common tracking and analytics (but allow LinkedIn GraphQL)
             if any(tracker in url for tracker in [
                 'google-analytics.com',
                 'googletagmanager.com',
@@ -331,6 +345,17 @@ class EnhancedBrowserConfig:
             ]):
                 logger.debug(f"Blocking tracker: {url}")
                 route.abort()
+                return
+            
+            # Allow LinkedIn GraphQL and API endpoints
+            if any(linkedin_api in url for linkedin_api in [
+                'linkedin.com/voyager',
+                'linkedin.com/graphql',
+                'linkedin.com/api',
+                'linkedin.com/voyagerApi',
+            ]):
+                logger.debug(f"Allowing LinkedIn API: {url}")
+                route.continue_()
                 return
             
             # Allow other requests to proceed

@@ -189,6 +189,7 @@ class CookieManager:
     def refresh_cookies_if_needed(self, context, page) -> bool:
         """
         Refresh cookies if they're getting stale during a session.
+        Enhanced to handle GraphQL authentication issues.
         
         Args:
             context: Playwright browser context
@@ -198,14 +199,14 @@ class CookieManager:
             True if cookies were refreshed, False otherwise
         """
         try:
-            # Check if cookies need refresh (after 30 minutes of use)
+            # Check if cookies need refresh (after 15 minutes of use, not 30)
             if self.cookies_file.exists():
                 # Get cookie file age
                 file_mtime = self.cookies_file.stat().st_mtime
                 cookie_age = time.time() - file_mtime
                 
                 # If cookies are old but session is still valid, refresh them
-                if cookie_age > 30 * 60:  # 30 minutes
+                if cookie_age > 15 * 60:  # Reduced to 15 minutes for better session management
                     current_cookies = context.cookies()
                     if current_cookies:
                         cookies_dict = [dict(c) for c in current_cookies]
@@ -221,6 +222,33 @@ class CookieManager:
                             logger.info("Refreshed cookies during session")
                             print("[INFO] Refreshed session cookies")
                             return True
+                            
+            # Also check for GraphQL authentication issues
+            try:
+                # Check if we're getting GraphQL errors by looking at page content
+                page_content = page.inner_text("body").lower()
+                if "something went wrong" in page_content or "try refreshing" in page_content:
+                    logger.warning("GraphQL error detected - refreshing cookies")
+                    print("[WARN] GraphQL error detected - attempting cookie refresh")
+                    
+                    # Force cookie refresh
+                    current_cookies = context.cookies()
+                    if current_cookies:
+                        cookies_dict = [dict(c) for c in current_cookies]
+                        linkedin_cookies = [
+                            c for c in cookies_dict 
+                            if 'linkedin.com' in c.get('domain', '') or 'linkedin.com' in c.get('url', '')
+                        ]
+                        
+                        if linkedin_cookies:
+                            self.save_cookies(linkedin_cookies)
+                            logger.info("Refreshed cookies due to GraphQL error")
+                            print("[INFO] Refreshed cookies due to GraphQL error")
+                            return True
+                            
+            except Exception as e:
+                logger.debug(f"Could not check for GraphQL errors: {e}")
+                
         except Exception as e:
             logger.warning(f"Failed to refresh cookies: {e}")
         
