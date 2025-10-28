@@ -36,6 +36,10 @@ isort==5.13.2
 pydantic==2.9.2
 pydantic-settings==2.6.1
 
+# CLI & UI
+click==8.1.8
+rich==14.2.0
+
 # Testing dependencies
 pytest==8.4.2
 pytest-cov==7.0.0

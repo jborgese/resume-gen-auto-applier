@@ -1,0 +1,25 @@
+We are looking for a Senior Python Developer to join our team.
+
+Requirements:
+- 5+ years of Python development experience
+- Experience with Django, Flask, or FastAPI
+- Knowledge of SQL databases (PostgreSQL, MySQL)
+- Experience with REST APIs
+- Git version control
+- Docker containerization
+- AWS cloud services
+- Agile development methodology
+
+Responsibilities:
+- Develop and maintain web applications
+- Design and implement REST APIs
+- Work with databases and data processing
+- Collaborate with cross-functional teams
+- Write clean, maintainable code
+- Participate in code reviews
+
+Nice to have:
+- Machine learning experience
+- DevOps knowledge
+- Frontend development (React, Vue.js)
+- Microservices architecture
