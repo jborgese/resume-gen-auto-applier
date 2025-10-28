@@ -36,24 +36,11 @@ from typing import Optional
 import yaml
 import json
 import time
-import logging
 import os
 import sys
+from src.logging_config import get_logger, log_function_call, log_error_context, log_job_context, log_browser_context, debug_pause
 
-# Set console encoding to avoid Unicode issues on Windows
-if sys.platform == "win32":
-    import locale
-    import os
-    # Set environment variable for UTF-8
-    os.environ['PYTHONIOENCODING'] = 'utf-8'
-    try:
-        # Try to set UTF-8 encoding
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-    except:
-        # Fallback to default
-        pass
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class BrowserMonitor:
     """
@@ -87,8 +74,8 @@ class BrowserMonitor:
         self.force_exit = False
         self.monitor_thread = threading.Thread(target=self._monitor_browser, daemon=True)
         self.monitor_thread.start()
-        print("[INFO] Browser monitoring started - program will exit if browser is manually closed")
-        print("[DEBUG] Monitoring will only trigger after 5 consecutive connection failures")
+        logger.info("Browser monitoring started - program will exit if browser is manually closed")
+        logger.debug("Monitoring will only trigger after 5 consecutive connection failures")
         
     def stop_monitoring(self):
         """Stop monitoring browser connection."""
@@ -116,15 +103,17 @@ class BrowserMonitor:
             except Exception as e:
                 consecutive_failures += 1
                 if self.monitoring and consecutive_failures >= max_failures:
-                    print(f"\n[WARNING] Browser connection lost after {consecutive_failures} consecutive failures: {e}")
-                    print("[INFO] Browser was manually closed by user - forcing program exit")
+                    logger.warning("Browser connection lost", 
+                                 consecutive_failures=consecutive_failures, 
+                                 error=str(e))
+                    logger.info("Browser was manually closed by user - forcing program exit")
                     self.force_exit = True
                     self.monitoring = False
                     
                     # Force exit the program
                     try:
                         # Try graceful exit first
-                        print("[INFO] Attempting graceful shutdown...")
+                        logger.info("Attempting graceful shutdown")
                         sys.exit(0)
                     except:
                         # Force exit if graceful doesn't work
@@ -132,11 +121,14 @@ class BrowserMonitor:
                     break
                 elif self.monitoring:
                     # Log the failure but don't exit yet
-                    print(f"[DEBUG] Browser connection check failed ({consecutive_failures}/{max_failures}): {e}")
+                    logger.debug("Browser connection check failed", 
+                                 consecutive_failures=consecutive_failures, 
+                                 max_failures=max_failures, 
+                                 error=str(e))
                     time.sleep(2)  # Wait a bit before retrying
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully
-                print("\n[INFO] Keyboard interrupt received - stopping monitoring")
+                logger.info("Keyboard interrupt received - stopping monitoring")
                 self.force_exit = True
                 self.monitoring = False
                 break
@@ -148,7 +140,7 @@ class BrowserMonitor:
     def _setup_signal_handlers(self):
         """Setup signal handlers for graceful shutdown."""
         def signal_handler(signum, frame):
-            print(f"\n[INFO] Received signal {signum} - initiating graceful shutdown...")
+            logger.info("Received signal - initiating graceful shutdown", signal=signum)
             self.force_exit = True
             self.monitoring = False
             
@@ -195,7 +187,7 @@ def scrape_jobs_from_search(
         # Try to load existing cookies for persistent login
         saved_cookies = cookie_manager.load_cookies()
         if saved_cookies:
-            print("[INFO] Found saved LinkedIn cookies - attempting to use existing session")
+            logger.info("Found saved LinkedIn cookies - attempting to use existing session")
             try:
                 # Prepare cookies for Playwright (ensure proper format)
                 prepared_cookies = cookie_manager.prepare_cookies_for_playwright(
@@ -209,7 +201,7 @@ def scrape_jobs_from_search(
                 
                 # Add cookies to context
                 context.add_cookies(prepared_cookies)  # type: ignore
-                print(f"[INFO] Loaded {len(prepared_cookies)} cookies into browser context")
+                logger.info("Loaded cookies into browser context", cookie_count=len(prepared_cookies))
                 
                 # Navigate to feed to verify session
                 page.goto("https://www.linkedin.com/feed/", timeout=config.TIMEOUTS["login"])
@@ -231,22 +223,22 @@ def scrape_jobs_from_search(
                 ]
                 
                 if any(login_indicators):
-                    print("[INFO] Successfully logged in using saved cookies - skipping login flow")
+                    logger.info("Successfully logged in using saved cookies - skipping login flow")
                     # Refresh cookies to update session
                     cookie_manager.refresh_cookies_if_needed(context, page)
                     skip_login = True
                 else:
-                    print("[INFO] Saved cookies appear to be expired or invalid - falling back to login")
+                    logger.info("Saved cookies appear to be expired or invalid - falling back to login")
                     # Delete invalid cookies to prevent future issues
                     cookie_manager.delete_cookies()
                     skip_login = False
                     
             except Exception as e:
                 logger.warning(f"Failed to use saved cookies: {e}")
-                print(f"[WARN] Could not use saved cookies: {e}")
+                logger.warning("Could not use saved cookies", error=str(e))
                 skip_login = False
         else:
-            print("[INFO] No saved cookies found - will perform fresh login")
+            logger.info("No saved cookies found - will perform fresh login")
             skip_login = False
         
         # Initialize resource error handling
@@ -270,28 +262,15 @@ def scrape_jobs_from_search(
                 login_context.add_context("search_url", search_url)
                 
                 # Debug pause before login
-                if config.DEBUG:
-                    print("[DEBUG] ⏸️  About to start LinkedIn login process")
-                    print(f"[DEBUG] Email: {email}")
-                    print("[DEBUG] Press Enter to continue...")
-                    try:
-                        input()
-                    except (EOFError, KeyboardInterrupt):
-                        print("[DEBUG] Continuing automatically...")
+                debug_pause("About to start LinkedIn login process", email=email)
                 
-                print("[INFO] Navigating to LinkedIn login page")
+                logger.info("Navigating to LinkedIn login page")
                 page.goto("https://www.linkedin.com/login", timeout=config.TIMEOUTS["login"])
                 
                 # Debug pause after navigating to login page
-                if config.DEBUG:
-                    print("[DEBUG] ⏸️  Successfully navigated to LinkedIn login page")
-                    print(f"[DEBUG] Current URL: {page.url}")
-                    print(f"[DEBUG] Page title: {page.title()}")
-                    print("[DEBUG] Press Enter to continue with login...")
-                    try:
-                        input()
-                    except (EOFError, KeyboardInterrupt):
-                        print("[DEBUG] Continuing automatically...")
+                debug_pause("Successfully navigated to LinkedIn login page", 
+                           current_url=page.url, 
+                           page_title=page.title())
                 
                 # Check for UI changes before proceeding (with login context)
                 ui_changes = ui_handler.detect_ui_changes(context="login")
@@ -300,16 +279,10 @@ def scrape_jobs_from_search(
                     if not ui_handler.adapt_to_changes(ui_changes):
                         raise LinkedInUIError("LinkedIn login page UI has changed and cannot be adapted")
                 
-                print("[INFO] Entering credentials")
+                logger.info("Entering credentials")
                 
                 # Debug pause before entering credentials
-                if config.DEBUG:
-                    print("[DEBUG] ⏸️  About to enter login credentials")
-                    print("[DEBUG] Press Enter to continue...")
-                    try:
-                        input()
-                    except (EOFError, KeyboardInterrupt):
-                        print("[DEBUG] Continuing automatically...")
+                debug_pause("About to enter login credentials")
                 
                 # Use fallback selectors for login
                 username_success = selector_fallback.safe_fill(
@@ -321,13 +294,7 @@ def scrape_jobs_from_search(
                     raise LinkedInUIError("Could not find username input field")
                 
                 # Debug pause after username entry
-                if config.DEBUG:
-                    print("[DEBUG] ⏸️  Username entered successfully")
-                    print("[DEBUG] Press Enter to continue with password...")
-                    try:
-                        input()
-                    except (EOFError, KeyboardInterrupt):
-                        print("[DEBUG] Continuing automatically...")
+                debug_pause("Username entered successfully")
                 
                 password_success = selector_fallback.safe_fill(
                     [config.LINKEDIN_SELECTORS["login"]["password"]], 
@@ -338,13 +305,7 @@ def scrape_jobs_from_search(
                     raise LinkedInUIError("Could not find password input field")
                 
                 # Debug pause before clicking submit
-                if config.DEBUG:
-                    print("[DEBUG] ⏸️  Password entered successfully")
-                    print("[DEBUG] Press Enter to submit login...")
-                    try:
-                        input()
-                    except (EOFError, KeyboardInterrupt):
-                        print("[DEBUG] Continuing automatically...")
+                debug_pause("Password entered successfully")
                 
                 submit_success = selector_fallback.safe_click(
                     [config.LINKEDIN_SELECTORS["login"]["submit"]], 
@@ -367,11 +328,11 @@ def scrape_jobs_from_search(
                 
                 # Check if we're on security/checkpoint page
                 if "Security Verification" in page_title or "security" in page_title.lower() or "checkpoint/challenge" in current_url:
-                    print("[INFO] Security verification page detected. Waiting for verification to complete...")
+                    logger.info("Security verification page detected - waiting for verification to complete")
                     
                     # Wait for redirect away from security page (LinkedIn may take 30-60 seconds)
                     try:
-                        print("[INFO] Waiting for security check to complete (this may take 30-60 seconds)...")
+                        logger.info("Waiting for security check to complete", timeout_seconds=60)
                         page.wait_for_url(
                             lambda url: "checkpoint" not in url.lower(),
                             timeout=60000  # Increase timeout to 60 seconds
@@ -552,21 +513,15 @@ def scrape_jobs_from_search(
                     print(f"[WARN] Could not save cookies for future sessions: {e}")
 
         #  GO TO JOBS PAGE FIRST (like before)
-        print("[INFO] Navigating to LinkedIn Jobs page initially...")
+        logger.info("Navigating to LinkedIn Jobs page initially")
         
         # Debug pause before navigation
-        if config.DEBUG:
-            print("[DEBUG] ⏸️  About to navigate to LinkedIn Jobs page")
-            print("[DEBUG] Press Enter to continue...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                print("[DEBUG] Continuing automatically...")
+        debug_pause("About to navigate to LinkedIn Jobs page")
         
         # Navigate to LinkedIn Jobs page first
         try:
             page.goto("https://www.linkedin.com/jobs/", timeout=config.TIMEOUTS["search_page"], wait_until="domcontentloaded")
-            print("[INFO] Successfully navigated to LinkedIn Jobs page")
+            logger.info("Successfully navigated to LinkedIn Jobs page")
             
             # Debug pause after initial navigation
             if config.DEBUG:
@@ -584,7 +539,7 @@ def scrape_jobs_from_search(
             print("[INFO] Continuing with direct search URL navigation...")
         
         #  GO TO SEARCH PAGE 
-        print(f"[INFO] Navigating to job search URL: {search_url}")
+        logger.info("Navigating to job search URL", search_url=search_url)
         
         # Debug pause before search navigation
         if config.DEBUG:
@@ -717,7 +672,7 @@ def scrape_jobs_from_search(
             print(f"[DEBUG] Page title: {page.title()}")
 
         #  COLLECT JOB LINKS 
-        print("[INFO] Collecting job links...")
+        logger.info("Collecting job links")
         
         # Debug pause before job collection
         if config.DEBUG:
@@ -734,7 +689,7 @@ def scrape_jobs_from_search(
             print("[WARN] No job links found")
             return []
         
-        print(f"[INFO] Found {len(job_links)} job links")
+        logger.info("Found job links", count=len(job_links))
         
         # Debug pause after job collection
         if config.DEBUG:
@@ -747,7 +702,7 @@ def scrape_jobs_from_search(
                 print("[DEBUG] Continuing automatically...")
 
         #  LOAD PERSONAL INFO 
-        print("[INFO] Loading personal information...")
+        logger.info("Loading personal information")
         try:
             with open(personal_info_path, "r", encoding="utf-8") as f:
                 personal_info = yaml.safe_load(f)

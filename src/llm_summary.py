@@ -4,9 +4,9 @@ import os
 import re
 from openai import OpenAI
 from src.error_handler import retry_with_backoff, ErrorContext, RetryableError, FatalError
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # [OK] Load API key from environment (set in .env)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

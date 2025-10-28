@@ -1,7 +1,10 @@
 import random, time, json, os
 from src.job_parser import parse_job_card, wait_for_job_cards_to_hydrate
 from src.shared_utils import FileHandler, TextProcessor, DelayManager
+from src.logging_config import get_logger, log_function_call, log_error_context
 import src.config as config
+
+logger = get_logger(__name__)
 
 def clean_text(text: str) -> str:
     """Normalize scraped text by removing excessive newlines and trimming spaces."""
@@ -16,10 +19,10 @@ def load_existing_job_links(filename="job_urls.json") -> set:
     try:
         existing = FileHandler.load_json(filename)
         if existing:
-            print(f"[INFO] Loaded {len(existing)} previously saved job URLs.")
+            logger.info("Loaded previously saved job URLs", count=len(existing))
             return set(existing)
     except Exception as e:
-        print(f"[WARN] Could not load existing job URLs: {e}")
+        logger.warning("Could not load existing job URLs", error=str(e))
     return set()
 
 def save_job_links(job_links, filename="job_urls.json"):
@@ -27,11 +30,11 @@ def save_job_links(job_links, filename="job_urls.json"):
     try:
         if FileHandler.save_json(job_links, filename):
             if config.DEBUG:
-                print(f"[DEBUG] Saved {len(job_links)} job URLs to {filename}")
+                logger.debug("Saved job URLs", count=len(job_links), filename=filename)
         else:
-            print(f"[WARN] Failed to save job URLs to {filename}")
+            logger.warning("Failed to save job URLs", filename=filename)
     except Exception as e:
-        print(f"[WARN] Failed to save job URLs: {e}")
+        logger.warning("Failed to save job URLs", error=str(e))
 
 def clean_existing_jobs(page, filename="job_urls.json"):
     """Removes jobs from job_urls.json that have already been applied for."""
@@ -47,10 +50,10 @@ def clean_existing_jobs(page, filename="job_urls.json"):
         try:
             # Look for the "Application submitted" indicator
             if page.locator("text=Application submitted").count():
-                print(f"[INFO] [OK] Job already applied: {url}  removing from list.")
+                logger.info("Job already applied - removing from list", url=url)
                 continue  # skip this job
         except:
-            print(f"[WARN] [WARN] Could not verify job status for {url}, keeping just in case.")
+            logger.warning("Could not verify job status - keeping just in case", url=url)
 
         cleaned_jobs.append(url)
 
@@ -77,13 +80,13 @@ def detect_scroll_target(page):
             }}
         """)
         if found:
-            print(f"[INFO] [OK] Detected scrollable job list container: {job_list_selector}")
+            logger.info("Detected scrollable job list container", selector=job_list_selector)
             return job_list_selector
         else:
-            print("[INFO] [WARN] Job list found but not scrollable  falling back to full window scroll.")
+            logger.info("Job list found but not scrollable - falling back to full window scroll")
             return None
     except Exception as e:
-        print(f"[WARNING] Could not detect job list container: {e}")
+        logger.warning("Could not detect job list container", error=str(e))
         return None
 
 

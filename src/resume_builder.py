@@ -1,7 +1,7 @@
 from pathlib import Path
 import re
 import time
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 
 # Suppress GLib-GIO warnings before importing WeasyPrint
 from src.glib_suppression import suppress_glib_warnings
@@ -11,7 +11,7 @@ from weasyprint import HTML
 from jinja2 import Environment, FileSystemLoader
 from src.error_handler import retry_with_backoff, ErrorContext, APIFailureHandler, RetryableError, FatalError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def sanitize_filename(text: str) -> str:
     """Sanitize text for safe filename usage."""
@@ -84,7 +84,7 @@ def build_resume(data: dict) -> str:
                 else:
                     logger.info("✅ Fallback PDF generation succeeded")
 
-            print(f"[INFO] 📄 Resume generated: {output_path}")
+            logger.info("Resume generated", output_path=str(output_path))
             return str(output_path)
             
         except Exception as e:

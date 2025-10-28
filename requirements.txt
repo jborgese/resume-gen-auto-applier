@@ -26,6 +26,7 @@ pydantic-settings==2.6.1
 requests==2.32.3
 beautifulsoup4==4.12.3
 pandas==2.2.2
+structlog==25.5.0
 
 # Dev tools (optional but recommended)
 black==24.4.2

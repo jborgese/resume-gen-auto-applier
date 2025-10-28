@@ -4,6 +4,11 @@ import sys
 import os
 from pathlib import Path
 
+# Initialize structured logging first
+from src.logging_config import initialize_logging, get_logger
+initialize_logging()
+logger = get_logger(__name__)
+
 # Redirect stderr to filter GLib warnings before any imports
 class GLibWarningFilter:
     def __init__(self, original_stderr):
@@ -38,12 +43,12 @@ STOPWORDS = set()
 try:
     with open("stopwords.json", "r", encoding="utf-8") as f:
         STOPWORDS = set(json.load(f))
-        print(f"[INFO] Loaded {len(STOPWORDS)} stopwords.")
+        logger.info("Loaded stopwords", count=len(STOPWORDS))
 except FileNotFoundError:
-    print("[WARNING] No stopwords.json found - skipping stopword filtering.")
+    logger.warning("No stopwords.json found - skipping stopword filtering")
 
 if __name__ == "__main__":
-    print(f"[INFO] Using resume template: {config.DEFAULT_TEMPLATE}")
+    logger.info("Using resume template", template=config.DEFAULT_TEMPLATE)
 
     # Validate LinkedIn credentials
     if not config.LINKEDIN_EMAIL or not config.LINKEDIN_PASSWORD:
@@ -64,18 +69,21 @@ if __name__ == "__main__":
     )
 
     if not jobs:
-        print("[WARNING] No jobs processed.")
+        logger.warning("No jobs processed")
         exit(0)
 
-    print(f"[INFO] Completed processing {len(jobs)} job(s). Summary:\n")
+    logger.info("Completed processing jobs", job_count=len(jobs))
 
     for idx, job in enumerate(jobs, start=1):
         title   = job.get("title", "N/A")
         company = job.get("company", "N/A")
         pdf     = job.get("resume_pdf", "")
         status  = job.get("apply_status", "skipped")
-        print(f" Job {idx}: {title} @ {company}")
-        print(f"   • Resume → {pdf}")
-        print(f"   • Apply   → {status}\n")
+        logger.info("Job summary", 
+                   job_index=idx, 
+                   title=title, 
+                   company=company, 
+                   resume_pdf=pdf, 
+                   apply_status=status)
 
-    print("[COMPLETE] All done.")
+    logger.info("All done - processing complete")

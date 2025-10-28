@@ -7,26 +7,22 @@ from playwright.sync_api import Page
 import yaml
 import os
 from src.human_behavior import HumanBehavior
+from src.logging_config import get_logger, log_function_call, log_error_context, debug_pause as structlog_debug_pause
+
+logger = get_logger(__name__)
 
 YAML_PATH = str(config.FILE_PATHS["personal_info"])
 
 def debug_pause(message: str = "", duration: float = 0) -> None:
     """
-    Pause for debugging purposes. In DEBUG mode, waits for user input.
-    Otherwise, sleeps for the specified duration.
+    Pause for debugging purposes. Uses structlog debug_pause.
     
     Args:
         message: Optional message to display during pause
         duration: Duration to sleep if not in DEBUG mode (default: 0 for user input)
     """
-    if config.DEBUG:
-        if message:
-            print(f"[DEBUG] ⏸️  {message}")
-        print("[DEBUG] Press Enter to continue...")
-        try:
-            input()
-        except (EOFError, KeyboardInterrupt):
-            print("[DEBUG] Continuing automatically...")
+    if message:
+        structlog_debug_pause(message)
     elif duration > 0:
         time.sleep(duration)
 
@@ -418,7 +414,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
     - Saves answers to YAML for re-use
     [OK] Cleans up job_urls.json (removes completed or already-applied jobs)
     """
-    print("[ACTION] Starting Easy Apply")
+    logger.info("Starting Easy Apply")
     
     # Debug pause before starting Easy Apply
     if config.DEBUG:
@@ -452,7 +448,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         if applied_banner.count():
             text = applied_banner.inner_text().strip()
             if config.LINKEDIN_SELECTORS["application_status"]["applied_text"] in text:
-                print("[INFO] [OK] Already applied for this job. Skipping Easy Apply.")
+                logger.info("Already applied for this job - skipping Easy Apply")
                 remove_from_json(job_url)
                 return False
 
@@ -461,7 +457,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         
         for selector in no_longer_accepting_selectors:
             if job_page.locator(selector).count():
-                print("[INFO] [WARN] Job is no longer accepting applications. Skipping and removing from list.")
+                logger.info("Job is no longer accepting applications - skipping and removing from list")
                 remove_from_json(job_url)
                 return False
         
@@ -488,7 +484,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                 continue
         
         if not easy_apply_button or not easy_apply_button.count():
-            print("[ERROR] [ERROR] No Easy Apply button found with any selector.")
+            logger.error("No Easy Apply button found with any selector")
             remove_from_json(job_url)
             return False
 
@@ -515,7 +511,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
             time.sleep(random.uniform(0.2, 0.5))
             easy_apply_button.click(timeout=config.TIMEOUTS["easy_apply_click"])
         
-        print("[INFO] [OK] Easy Apply button clicked.")
+        logger.info("Easy Apply button clicked")
         
         # Pause after clicking Easy Apply button
         debug_pause("Easy Apply button clicked, waiting for modal...", 1.0)
@@ -527,14 +523,14 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         for selector in modal_selectors if isinstance(modal_selectors, list) else [modal_selectors]:
             try:
                 job_page.wait_for_selector(selector, state="visible", timeout=config.TIMEOUTS["modal_wait"])
-                print(f"[INFO] [OK] Easy Apply modal detected with selector: {selector}")
+                logger.info("Easy Apply modal detected", selector=selector)
                 modal_found = True
                 break
             except:
                 continue
         
         if not modal_found:
-            print("[ERROR] [ERROR] Easy Apply modal not detected with any selector.")
+            logger.error("Easy Apply modal not detected with any selector")
             remove_from_json(job_url)
             return False
 
@@ -664,7 +660,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                     print("[DEBUG] About to click SUBMIT")
                     debug_pause("About to click SUBMIT button...", 0.5)
                 submit_btn.first.click()
-                print("[INFO] [OK] Submitted application.")
+                logger.info("Submitted application")
                 debug_pause("Submit button clicked, waiting for confirmation...", 1.0)
                 break
 
@@ -673,14 +669,14 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                     print("[DEBUG] About to click REVIEW")
                     debug_pause("About to click REVIEW button...", 0.5)
                 review_btn.first.click()
-                print("[INFO] [RETRY] Clicked Review button.")
+                logger.info("Clicked Review button")
                 debug_pause("Review button clicked, continuing...", 0.8)
             elif next_btn and next_btn.count() > 0:
                 if config.DEBUG:
                     print("[DEBUG] About to click NEXT")
                     debug_pause("About to click NEXT button...", 0.5)
                 next_btn.first.click()
-                print(f"[INFO] ➡️ Clicked Next button (step {step_counter}/{max_steps}).")
+                logger.info("Clicked Next button", step=step_counter, max_steps=max_steps)
                 debug_pause("Next button clicked, moving to next step...", 0.8)
 
             else:
