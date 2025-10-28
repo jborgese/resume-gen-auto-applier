@@ -63,18 +63,71 @@ def _create_fallback_config() -> ConfigManager:
         references=[]
     )
     
-    # Create minimal selectors
+    # Create minimal selectors with proper LinkedIn selectors
     linkedin_selectors = LinkedInSelectors(
-        login={},
-        login_fallbacks=[],
-        login_success=[],
-        job_search={},
-        job_detail={},
-        easy_apply={},
-        easy_apply_fallbacks=[],
-        resume_upload={},
-        application_status={},
-        form_fields={}
+        login={
+            "username": 'input[id="username"]',
+            "password": 'input[id="password"]',
+            "submit": 'button[type="submit"]',
+        },
+        login_fallbacks=[
+            'input[name="session_key"]',
+            'input[name="session_password"]',
+            'input[type="email"]',
+            'input[type="password"]',
+            'button:has-text("Sign in")',
+            'button:has-text("Log in")'
+        ],
+        login_success=[
+            'nav[aria-label="Primary"]',
+            'div[data-test-id="feed-identity-module"]',
+            '.feed-shared-update-v2',
+            '.global-nav',
+            'main[role="main"]',
+            '.application-outlet'
+        ],
+        job_search={
+            "job_list": "div.scaffold-layout__list.jobs-semantic-search-list",
+            "job_card": "div.job-card-container",
+            "job_title": "a.job-card-list__title",
+            "company_name": "a.job-card-container__company-name",
+            "location": "div.job-card-container__metadata-item",
+            "next_page": "button[aria-label='Next']"
+        },
+        job_detail={
+            "title": "h1.job-details-jobs-unified-top-card__job-title",
+            "company": "a.job-details-jobs-unified-top-card__company-name",
+            "location": "span.job-details-jobs-unified-top-card__bullet",
+            "description": "div.job-details-jobs-unified-top-card__job-description",
+            "easy_apply_button": "button.jobs-apply-button--top-card"
+        },
+        easy_apply={
+            "next_button": "button[aria-label='Continue to next step']",
+            "review_button": "button[aria-label='Review your application']",
+            "submit_button": "button[aria-label='Submit application']",
+            "phone_input": "input[name='phoneNumber']",
+            "resume_upload": "input[type='file']"
+        },
+        easy_apply_fallbacks=[
+            "button:has-text('Next')",
+            "button:has-text('Continue')",
+            "button:has-text('Review')",
+            "button:has-text('Submit')"
+        ],
+        resume_upload={
+            "file_input": "input[type='file']",
+            "upload_button": "button:has-text('Upload')"
+        },
+        application_status={
+            "success_message": "div:has-text('Application submitted')",
+            "error_message": "div:has-text('Error')"
+        },
+        form_fields={
+            "phone": "input[name='phoneNumber']",
+            "email": "input[name='email']",
+            "first_name": "input[name='firstName']",
+            "last_name": "input[name='lastName']"
+        }
     )
     
     # Create minimal file paths
