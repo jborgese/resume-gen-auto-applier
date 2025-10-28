@@ -7,10 +7,10 @@ This module provides a centralized way to load, validate, and access configurati
 
 from typing import Optional, Dict, Any
 from pathlib import Path
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 from .config_schemas import AppConfig, AppSettings, PersonalInfo, KeywordWeights
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConfigManager:

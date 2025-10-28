@@ -1,6 +1,9 @@
 from typing import Union
 import src.config as config
 import time
+from src.logging_config import get_logger, log_function_call, log_error_context
+
+logger = get_logger(__name__)
 
 def wait_for_job_cards_to_hydrate(page, timeout=None):
     """
@@ -23,11 +26,11 @@ def wait_for_job_cards_to_hydrate(page, timeout=None):
                 break
         if hydrated:
             if config.DEBUG:
-                print("[DEBUG] ✅ All job cards are hydrated with data.")
+                logger.debug("All job cards are hydrated with data")
             return True
         time.sleep(0.5)
 
-    print("[WARN] ⚠️ Some job cards may not have hydrated fully.")
+    logger.warning("Some job cards may not have hydrated fully")
     return False
 
 
@@ -61,7 +64,7 @@ def parse_job_card(li_element) -> dict:
     job["hydrated"] = hydrated
 
     if not hydrated:
-        print("[WARN] ⚠️ Job card not fully hydrated (missing wrapper)  parsing anyway.")
+        logger.warning("Job card not fully hydrated (missing wrapper) - parsing anyway")
 
     # ✅ ID from wrapper
     try:
@@ -72,7 +75,7 @@ def parse_job_card(li_element) -> dict:
                 job["id"] = job_id
                 job["url"] = f"https://www.linkedin.com/jobs/view/{job_id}/"
     except:
-        print("[WARN] ⚠️ Could not get job ID from wrapper.")
+        logger.warning("Could not get job ID from wrapper")
 
     # ✅ Fallback: grab from <a> href
     if not job["id"]:
@@ -85,7 +88,7 @@ def parse_job_card(li_element) -> dict:
                     job["id"] = job_id
                     job["url"] = f"https://www.linkedin.com/jobs/view/{job_id}/"
         except:
-            print("[WARN] ⚠️ Could not parse job link fallback.")
+            logger.warning("Could not parse job link fallback")
 
     # ✅ Title
     try:
@@ -93,7 +96,7 @@ def parse_job_card(li_element) -> dict:
         if title_el.count():
             job["title"] = title_el.inner_text().strip()
     except:
-        print("[WARN] ⚠️ Could not parse title.")
+        logger.warning("Could not parse title")
 
     # ✅ Company
     try:
@@ -103,7 +106,7 @@ def parse_job_card(li_element) -> dict:
         if company_el.count():
             job["company"] = company_el.inner_text().strip()
     except:
-        print("[WARN] ⚠️ Could not parse company.")
+        logger.warning("Could not parse company")
 
     # ✅ Location + Work Mode Heuristic
     try:
@@ -119,7 +122,7 @@ def parse_job_card(li_element) -> dict:
             elif "On-site" in location_text:
                 job["work_mode"] = "On-site"
     except:
-        print("[WARN] ⚠️ Could not parse location.")
+        logger.warning("Could not parse location")
 
     # ✅ Posted Date
     try:
@@ -127,7 +130,7 @@ def parse_job_card(li_element) -> dict:
         if time_el.count():
             job["posted_date"] = time_el.get_attribute("datetime")
     except:
-        print("[WARN] ⚠️ Could not parse posted date.")
+        logger.warning("Could not parse posted date")
 
     # ✅ Easy Apply
     try:
@@ -135,7 +138,7 @@ def parse_job_card(li_element) -> dict:
         if any("Easy Apply" in text for text in footer_texts):
             job["easy_apply"] = True
     except:
-        print("[WARN] ⚠️ Could not verify Easy Apply status.")
+        logger.warning("Could not verify Easy Apply status")
 
     # ✅ Already applied (job card footer)
     try:
@@ -145,7 +148,7 @@ def parse_job_card(li_element) -> dict:
             if "Applied" in applied_text:
                 job["already_applied"] = True
     except:
-        print("[WARN] ⚠️ Could not check 'Applied' footer.")
+        logger.warning("Could not check Applied footer")
 
     # ✅ Fallback: job detail banner check (rare case where LinkedIn marks applied here)
     if not job["already_applied"]:
@@ -154,6 +157,6 @@ def parse_job_card(li_element) -> dict:
             if applied_banner.count() and "Application submitted" in applied_banner.inner_text():
                 job["already_applied"] = True
         except:
-            print("[WARN] ⚠️ Could not check 'Application submitted' banner.")
+            logger.warning("Could not check Application submitted banner")
 
     return job

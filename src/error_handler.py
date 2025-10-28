@@ -2,10 +2,10 @@
 
 import time
 import random
-import logging
 from typing import Any, Callable, Optional, Dict, List, Union
 from functools import wraps
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
+from src.logging_config import get_logger, log_function_call, log_error_context
 
 # Handle TargetClosedError import compatibility
 try:
@@ -18,8 +18,8 @@ except ImportError:
 import src.config as config
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+import logging
+logger = get_logger(__name__)
 
 # Suppress WeasyPrint's verbose font processing logs
 weasyprint_logger = logging.getLogger('weasyprint')

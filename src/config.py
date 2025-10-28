@@ -7,15 +7,15 @@ while maintaining the same interface for existing code.
 """
 
 import os
-import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
+from src.logging_config import get_logger, log_function_call, log_error_context
 
 # Import the new configuration system
 from .config_manager import get_config_manager, ConfigManager
 from .config_schemas import AppConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Global config manager instance
 _config_manager: Optional[ConfigManager] = None

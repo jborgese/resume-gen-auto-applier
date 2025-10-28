@@ -10,9 +10,9 @@ import yaml
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConfigMigration:

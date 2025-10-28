@@ -5,9 +5,9 @@ import os
 import time
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CookieManager:
@@ -45,12 +45,12 @@ class CookieManager:
                 json.dump(cookies, f, indent=2)
             
             logger.info(f"Saved {len(cookies)} cookies to {self.cookies_file}")
-            print(f"[INFO] Saved {len(cookies)} cookies to {self.cookies_file}")
+            logger.info("Saved cookies", count=len(cookies), file_path=str(self.cookies_file))
             return True
             
         except Exception as e:
             logger.error(f"Failed to save cookies: {e}")
-            print(f"[ERROR] Failed to save cookies: {e}")
+            logger.error("Failed to save cookies", error=str(e))
             return False
     
     def load_cookies(self) -> Optional[List[dict]]:
@@ -74,7 +74,7 @@ class CookieManager:
             if len(valid_cookies) < len(cookies):
                 expired_count = len(cookies) - len(valid_cookies)
                 logger.warning(f"Filtered out {expired_count} expired cookies")
-                print(f"[WARN] Filtered out {expired_count} expired cookies")
+                logger.warning("Filtered out expired cookies", expired_count=expired_count)
                 
                 # Save cleaned cookies back to file
                 if valid_cookies:
@@ -83,22 +83,22 @@ class CookieManager:
                     # All cookies expired, delete file
                     self.delete_cookies()
                     logger.info("All cookies expired - deleted cookie file")
-                    print("[INFO] All cookies expired - will need fresh login")
+                    logger.info("All cookies expired - deleted cookie file")
                     return None
             
             # Check cookie freshness (LinkedIn cookies older than 7 days may be suspicious)
             cookie_age = self._get_cookie_age(cookies)
             if cookie_age > 7 * 24 * 3600:  # 7 days in seconds
                 logger.warning(f"Cookies are {cookie_age / (24*3600):.1f} days old - may need refresh")
-                print(f"[WARN] Cookies are {cookie_age / (24*3600):.1f} days old - LinkedIn may require refresh")
+                logger.warning("Cookies are old - may need refresh", age_days=cookie_age / (24*3600))
             
             logger.info(f"Loaded {len(valid_cookies)} valid cookies from {self.cookies_file}")
-            print(f"[INFO] Loaded {len(valid_cookies)} valid cookies from {self.cookies_file}")
+            logger.info("Loaded valid cookies", count=len(valid_cookies), file_path=str(self.cookies_file))
             return valid_cookies
             
         except Exception as e:
             logger.error(f"Failed to load cookies: {e}")
-            print(f"[WARN] Failed to load cookies: {e}")
+            logger.error("Failed to load cookies", error=str(e))
             return None
     
     def _validate_cookies(self, cookies: List[dict]) -> List[dict]:
@@ -220,7 +220,7 @@ class CookieManager:
                         if linkedin_cookies:
                             self.save_cookies(linkedin_cookies)
                             logger.info("Refreshed cookies during session")
-                            print("[INFO] Refreshed session cookies")
+                            logger.info("Refreshed session cookies")
                             return True
                             
             # Also check for GraphQL authentication issues
@@ -229,7 +229,7 @@ class CookieManager:
                 page_content = page.inner_text("body").lower()
                 if "something went wrong" in page_content or "try refreshing" in page_content:
                     logger.warning("GraphQL error detected - refreshing cookies")
-                    print("[WARN] GraphQL error detected - attempting cookie refresh")
+                    logger.warning("GraphQL error detected - attempting cookie refresh")
                     
                     # Force cookie refresh
                     current_cookies = context.cookies()
@@ -243,7 +243,7 @@ class CookieManager:
                         if linkedin_cookies:
                             self.save_cookies(linkedin_cookies)
                             logger.info("Refreshed cookies due to GraphQL error")
-                            print("[INFO] Refreshed cookies due to GraphQL error")
+                            logger.info("Refreshed cookies due to GraphQL error")
                             return True
                             
             except Exception as e:
@@ -264,8 +264,7 @@ class CookieManager:
         try:
             if self.cookies_file.exists():
                 self.cookies_file.unlink()
-                logger.info(f"Deleted cookie file: {self.cookies_file}")
-                print(f"[INFO] Deleted cookie file: {self.cookies_file}")
+                logger.info("Deleted cookie file", file_path=str(self.cookies_file))
                 return True
         except Exception as e:
             logger.error(f"Failed to delete cookies: {e}")

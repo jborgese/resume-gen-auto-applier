@@ -92,11 +92,11 @@ def detect_scroll_target(page):
 
 # [OK] Scroll to load all jobs in a human-like way
 def human_like_scroll(page, rounds=12):
-    print(f"[INFO] 🖱️ Starting human-like mouse scroll for {rounds} rounds...")
+    logger.info("Starting human-like mouse scroll", rounds=rounds)
     for i in range(rounds):
         scroll_amount = random.randint(250, 450)  # small varied increments
         page.mouse.wheel(0, scroll_amount)
-        print(f"[DEBUG] 🖱️ Mouse wheel scroll {i+1}/{rounds} by {scroll_amount}px")
+        logger.debug("Mouse wheel scroll", round=i+1, total_rounds=rounds, scroll_amount=scroll_amount)
 
         # ⏳ Wait slightly differently each time
         time.sleep(random.uniform(0.7, 1.4))
@@ -104,9 +104,9 @@ def human_like_scroll(page, rounds=12):
         # 🔄 Occasionally scroll up a tiny bit to mimic human checking behavior
         if i % 4 == 3:
             page.mouse.wheel(0, -random.randint(50, 150))
-            print("[DEBUG] 🔼 Small upward scroll for realism")
+            logger.debug("Small upward scroll for realism")
 
-    print("[INFO] [OK] Finished mouse scrolling.")
+    logger.info("Finished mouse scrolling")
 
 def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float = 1.0) -> None:
     """
@@ -121,11 +121,11 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
     try:
         page.wait_for_selector(job_list_selector, timeout=config.TIMEOUTS["job_list"])
     except:
-        print("[WARN] No job list found for scrolling.")
+        logger.warning("No job list found for scrolling")
         return
 
     if config.DEBUG:
-        print(f"[DEBUG] 🎯 Starting robust scroll inside '{job_list_selector}'")
+        logger.debug("Starting robust scroll", selector=job_list_selector)
 
     scroll_speed = config.SCROLL_CONFIG["base_speed"]
     loaded_last_round = 0
@@ -139,11 +139,11 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
         adjusted_scroll = max(100, scroll_speed + jitter)
 
         if config.DEBUG:
-            print(f"[DEBUG] 🖱️ Scroll pass {scroll_round+1}  will scroll {adjusted_scroll}px.")
+            logger.debug("Scroll pass", pass_number=scroll_round+1, scroll_amount=adjusted_scroll)
 
         page.mouse.wheel(0, adjusted_scroll)
         if config.DEBUG:
-            print(f"[DEBUG] 🖱️ Scrolled {adjusted_scroll}px (base {scroll_speed}px + jitter {jitter}px)")
+            logger.debug("Scrolled", amount=adjusted_scroll, base_speed=scroll_speed, jitter=jitter)
 
         time.sleep(config.SCROLL_CONFIG["pause_between"])
 
@@ -159,24 +159,24 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
                 hydrated_count += 1
 
         if config.DEBUG:
-            print(f"[DEBUG] Hydrated {hydrated_count}/{total_cards} job cards after scroll {scroll_round+1}")
+            logger.debug("Hydrated job cards", hydrated_count=hydrated_count, total_cards=total_cards, scroll_round=scroll_round+1)
 
         # [OK] If all 25 jobs are hydrated, we can stop early
         if hydrated_count >= 25:
             if config.DEBUG:
-                print(f"[DEBUG] [OK] All job cards fully hydrated by scroll pass {scroll_round+1}")
+                logger.debug("All job cards fully hydrated", scroll_round=scroll_round+1)
             break
 
         # [OK] Adjust speed based on hydration progress
         if hydrated_count == loaded_last_round:
             scroll_speed = max(config.SCROLL_CONFIG["min_speed"], scroll_speed - 50)
             if config.DEBUG:
-                print(f"[DEBUG] ⏬ No new hydration  slowing scroll to {scroll_speed}px")
+                logger.debug("No new hydration - slowing scroll", scroll_speed=scroll_speed)
             time.sleep(1.5)
         else:
             scroll_speed = min(config.SCROLL_CONFIG["max_speed"], scroll_speed + 25)
             if config.DEBUG:
-                print(f"[DEBUG] ⏫ New jobs hydrated  speeding scroll to {scroll_speed}px")
+                logger.debug("New jobs hydrated - speeding scroll", scroll_speed=scroll_speed)
 
         loaded_last_round = hydrated_count
 
@@ -188,7 +188,7 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
             hydrated_count += 1
 
     if config.DEBUG:
-        print(f"[DEBUG] [OK] Final hydration: {hydrated_count}/{job_cards.count()} job cards hydrated after scroll.")
+        logger.debug("Final hydration", hydrated_count=hydrated_count, total_cards=job_cards.count())
 
 
 from typing import Optional
@@ -211,24 +211,24 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
     if max_jobs is None:
         max_jobs = config.MAX_JOBS
 
-    print("[INFO] Collecting jobs using pagination")
+    logger.info("Collecting jobs using pagination")
 
     filename = "job_urls.json"
 
     # [OK] Handle start_fresh
     if start_fresh and os.path.exists(filename):
         os.remove(filename)
-        print(f"[INFO] [DELETE] start_fresh=True -> Deleted old {filename}")
+        logger.info("Deleted old job URLs file", filename=filename)
 
     # [OK] Load any existing saved jobs
     job_links = list(load_existing_job_links(filename)) if os.path.exists(filename) else []
     seen_ids = {url.split("/")[-2] for url in job_links}
 
-    print(f"[INFO] Loaded {len(job_links)} previously saved job URLs.")
+    logger.info("Loaded previously saved job URLs", count=len(job_links))
 
     # [OK] Check if we already have enough jobs - skip scraping if so
     if len(job_links) >= max_jobs:
-        print(f"[INFO] Already have {len(job_links)} jobs (>= {max_jobs} max). Skipping scraping and using existing jobs.")
+        logger.info("Already have enough jobs - skipping scraping", job_count=len(job_links), max_jobs=max_jobs)
         return job_links
 
     # [OK] Detect total job count from the search page
@@ -237,10 +237,10 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
         total_jobs_text = page.inner_text(config.LINKEDIN_SELECTORS["job_search"]["total_jobs"])
         total_jobs = int("".join(filter(str.isdigit, total_jobs_text)))
     except:
-        print("[WARN] [WARN] Could not find total job count. Defaulting to 1 page.")
+        logger.warning("Could not find total job count - defaulting to 1 page")
         total_jobs = 0
 
-    print(f"[INFO] Total jobs listed: {total_jobs if total_jobs else 'Unknown'}")
+    logger.info("Total jobs listed", total_jobs=total_jobs if total_jobs else "Unknown")
 
     jobs_per_page = 25
     collected_count = len(job_links)  # Start with existing jobs count
@@ -250,23 +250,23 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
         start_offset = page_num * jobs_per_page
         paged_url = f"{base_url}&start={start_offset}"
 
-        print(f"[INFO] Navigating to page {page_num+1} (start={start_offset})")
+        logger.info("Navigating to page", page_number=page_num+1, start_offset=start_offset)
         page.goto(paged_url, timeout=config.TIMEOUTS["search_page"])
 
         # [OK] Wait for job list container
         job_list_selector = config.LINKEDIN_SELECTORS["job_search"]["job_list"]
         try:
             page.wait_for_selector(job_list_selector, timeout=config.TIMEOUTS["job_list"])
-            print("[INFO] Found job list container.")
+            logger.info("Found job list container")
         except:
-            print(f"[WARN] Job list container not found on page {page_num+1}. Skipping.")
+            logger.warning("Job list container not found", page_number=page_num+1)
             page_num += 1
             continue
 
         # [OK] Hover before scrolling
         page.hover(job_list_selector)
         if config.DEBUG:
-            print("[DEBUG] 🖱️ Mouse hovered over job list container.")
+            logger.debug("Mouse hovered over job list container")
 
         # [OK] Human-like scrolling
         scroll_job_list_human_like(page, max_passes=config.RETRY_CONFIG["max_scroll_passes"], pause_between=config.SCROLL_CONFIG["pause_between"])
@@ -275,7 +275,7 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
         job_cards = page.locator(config.LINKEDIN_SELECTORS["job_search"]["job_cards"])
         job_count = job_cards.count()
         if config.DEBUG:
-            print(f"[DEBUG] Found {job_count} <li> elements after scroll on page {page_num+1}.")
+            logger.debug("Found job elements", count=job_count, page_number=page_num+1)
 
         for i in range(job_count):
             job_el = job_cards.nth(i)
@@ -283,15 +283,15 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
 
             if not job_data.get("id"):
                 if config.DEBUG:
-                    print(f"[DEBUG] ⏭️ Skipping li #{i}  no job ID found.")
+                    logger.debug("Skipping job - no job ID found", li_index=i)
                 continue
             if job_data.get("already_applied"):
                 if config.DEBUG:
-                    print(f"[DEBUG] ⏭️ Skipping '{job_data['title']}'  application already submitted.")
+                    logger.debug("Skipping job - already applied", title=job_data['title'])
                 continue
             if job_data["id"] in seen_ids:
                 if config.DEBUG:
-                    print(f"[DEBUG] 🔁 Already saved job {job_data['id']}  skipping.")
+                    logger.debug("Already saved job - skipping", job_id=job_data["id"])
                 continue
 
             job_links.append(job_data["url"])
@@ -299,18 +299,18 @@ def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[in
             collected_count += 1
 
             if config.DEBUG:
-                print(f"[DEBUG] [OK] Parsed & added: {job_data}")
+                logger.debug("Parsed and added job", job_data=job_data)
 
             # Early stop if reached limits mid-page
             if collected_count >= max_jobs or (total_jobs and collected_count >= total_jobs):
                 break
 
         save_job_links(job_links, filename)
-        print(f"[INFO] Page {page_num+1} done. Total collected so far: {collected_count}")
+        logger.info("Page completed", page_number=page_num+1, collected_count=collected_count)
 
         # Next page
         page_num += 1
 
-    print(f"[INFO] Finished pagination. Total jobs collected: {collected_count}")
+    logger.info("Finished pagination", total_collected=collected_count)
     return job_links
 

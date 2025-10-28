@@ -1,13 +1,13 @@
 # src/resource_error_handler.py
 
-import logging
 import time
 from typing import Dict, List, Optional, Any
 from playwright.sync_api import Page, Route, Request, Response
 import re
 import src.config as config
+from src.logging_config import get_logger, log_function_call, log_error_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class ResourceErrorHandler:
     """

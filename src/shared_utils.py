@@ -12,9 +12,9 @@ import time
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class FileHandler:
     """Handles file operations with consistent error handling."""

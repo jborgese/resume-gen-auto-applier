@@ -8,12 +8,12 @@ This module provides the same interface as the old config.py but uses the new ty
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 
 from .config_manager import get_config_manager, ConfigManager
 from .config_schemas import AppConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Global config manager instance
 _config_manager: Optional[ConfigManager] = None

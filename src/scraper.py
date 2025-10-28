@@ -337,7 +337,7 @@ def scrape_jobs_from_search(
                             lambda url: "checkpoint" not in url.lower(),
                             timeout=60000  # Increase timeout to 60 seconds
                         )
-                        print("[INFO] Security verification page redirected")
+                        logger.info("Security verification page redirected")
                         time.sleep(3)  # Give page time to fully load
                         
                         # Check where we were redirected to
@@ -345,77 +345,77 @@ def scrape_jobs_from_search(
                         
                         # If redirected to login, verification failed
                         if "/login" in final_url or "uas/login" in final_url:
-                            print("[ERROR] LinkedIn redirected to login page after security verification")
-                            print("[ERROR] The security verification likely failed or requires manual completion")
-                            print("[INFO] Please log in manually through the browser to complete the verification")
-                            print("[INFO] This usually happens when LinkedIn detects automated login attempts")
+                            logger.error("LinkedIn redirected to login page after security verification")
+                            logger.error("The security verification likely failed or requires manual completion")
+                            logger.info("Please log in manually through the browser to complete the verification")
+                            logger.info("This usually happens when LinkedIn detects automated login attempts")
                             raise RetryableError("Security verification failed - redirected to login")
                         
                         # If we got to a good page, mark as logged in
                         if "linkedin.com/feed" in final_url or "linkedin.com/in/" in final_url:
-                            print("[INFO] Successfully logged in after security verification")
+                            logger.info("Successfully logged in after security verification")
                             login_detected = True
                         else:
-                            print(f"[INFO] Security verification completed (URL: {final_url})")
+                            logger.info("Security verification completed", final_url=final_url)
                             login_detected = True  # Assume success if not on login page
                             
                     except PlaywrightTimeout:
                         # Timeout waiting for redirect - check where we still are
                         final_url = page.url
-                        print(f"[WARN] Security verification timed out. Still on: {final_url}")
+                        logger.warning("Security verification timed out", final_url=final_url)
                         
                         # If still on checkpoint page after timeout, ask user to complete manually
                         if "checkpoint" in final_url.lower():
-                            print("[INFO] Security verification is taking longer than expected")
-                            print("[INFO] The browser window is still open - please complete the security check manually")
-                            print("[INFO] Once you're logged into LinkedIn (you'll see the feed), press Enter here...")
-                            print("[INFO] The script will then save your session cookies for future automatic logins")
+                            logger.info("Security verification is taking longer than expected")
+                            logger.info("The browser window is still open - please complete the security check manually")
+                            logger.info("Once you're logged into LinkedIn (you'll see the feed), press Enter here...")
+                            logger.info("The script will then save your session cookies for future automatic logins")
                             input("Press Enter once you're logged into LinkedIn...")
                             
                             # Check if user successfully logged in
                             time.sleep(2)  # Give page a moment to update
                             final_url = page.url
                             if "/feed" in final_url or "/in/" in final_url or "linkedin.com" in final_url:
-                                print("[INFO] Successfully logged in manually")
+                                logger.info("Successfully logged in manually")
                                 login_detected = True
                             else:
-                                print("[ERROR] Still not logged in. Please try again.")
+                                logger.error("Still not logged in. Please try again.")
                                 raise RetryableError("Manual login completion failed")
                         else:
                             # Check if we got redirected somewhere else
                             if "/login" in final_url or "uas/login" in final_url:
-                                print("[ERROR] LinkedIn redirected to login after security verification timeout")
+                                logger.error("LinkedIn redirected to login after security verification timeout")
                                 raise RetryableError("Security verification timeout - redirected to login")
                             else:
                                 # Unexpected state - but assume we might be logged in
-                                print(f"[INFO] Security verification timed out but on unexpected page: {final_url}")
+                                logger.info("Security verification timed out but on unexpected page", final_url=final_url)
                                 login_detected = True  # Optimistically assume success
                             
                     except Exception as e:
-                        print(f"[WARN] Security verification wait error: {e}")
+                        logger.warning("Security verification wait error", error=str(e))
                         # Check where we ended up after the error
                         final_url = page.url
                         if "/login" in final_url or "uas/login" in final_url:
-                            print("[ERROR] Error during security verification - redirected to login")
+                            logger.error("Error during security verification - redirected to login")
                             raise RetryableError("Security verification error - redirected to login")
                         elif "checkpoint" in final_url.lower():
-                            print("[ERROR] Security verification error - still on checkpoint page")
+                            logger.error("Security verification error - still on checkpoint page")
                             raise RetryableError("Security verification error - check required")
                         else:
-                            print(f"[INFO] Security verification error but on unexpected page: {final_url}")
+                            logger.info("Security verification error but on unexpected page", final_url=final_url)
                             login_detected = True  # Assume success
                 
                 # Method 1: Check URL - if we're redirected away from login page, likely successful
                 current_url = page.url
                 if "/login" not in current_url and ("linkedin.com/feed" in current_url or "linkedin.com/in/" in current_url):
-                    print(f"[INFO] Logged in successfully (URL redirect detected: {current_url}).")
+                    logger.info("Logged in successfully", current_url=current_url)
                     login_detected = True
                 
                 # Method 2: Check page title
                 elif not login_detected:
                     page_title = page.title()
                     if "Feed" in page_title or "LinkedIn" in page_title and "Sign In" not in page_title:
-                        print(f"[INFO] Logged in successfully (page title indicates success: '{page_title}').")
+                        logger.info("Logged in successfully", page_title=page_title)
                         login_detected = True
                 
                 # Method 3: Try common selectors as fallback
@@ -425,7 +425,7 @@ def scrape_jobs_from_search(
                     for selector in login_success_selectors:
                         try:
                             page.wait_for_selector(selector, timeout=config.TIMEOUTS["login_success"])
-                            print(f"[INFO] Logged in successfully (detected via: {selector}).")
+                            logger.info("Logged in successfully", selector=selector)
                             login_detected = True
                             break
                         except PlaywrightTimeout:
@@ -447,18 +447,18 @@ def scrape_jobs_from_search(
                                 'invalid_credentials': "Invalid credentials. Please check your LINKEDIN_EMAIL and LINKEDIN_PASSWORD.",
                                 'form_error': "Login form error detected. Please check your credentials."
                             }
-                            print(f"[ERROR] {error_messages[error_type]}")
+                            logger.error("Login form error detected. Please check your credentials.", error_type=error_type)
                             raise FatalError(f"Login failed: {error_type}")
                     
                     if "/login" in page.url:
-                        print("[ERROR] Still on login page - credentials may be incorrect or CAPTCHA required.")
+                        logger.error("Still on login page - credentials may be incorrect or CAPTCHA required.")
                         raise FatalError("Login failed: Still on login page")
                     else:
-                        print("[ERROR] Login failed - unable to detect successful login. This could be due to:")
-                        print("         • CAPTCHA/MFA challenge")
-                        print("         • Invalid credentials") 
-                        print("         • LinkedIn UI changes")
-                        print("         • Rate limiting")
+                        logger.error("Login failed - unable to detect successful login. This could be due to:")
+                        logger.error("• CAPTCHA/MFA challenge")
+                        logger.error("• Invalid credentials")
+                        logger.error("• LinkedIn UI changes")
+                        logger.error("• Rate limiting")
                         raise RetryableError("Login detection failed - may be temporary")
                 
             except RetryableError as e:
@@ -468,19 +468,11 @@ def scrape_jobs_from_search(
                 if "manual login" in error_msg.lower():
                     raise e
                 logger.error(f"Login failed: {e}")
-                if config.DEBUG:
-                    print(f"[DEBUG] Current URL: {page.url}")
-                    print(f"[DEBUG] Page title: {page.title()}")
-                    print("[DEBUG] Press Enter to continue or Ctrl+C to exit...")
-                    input()
+                debug_pause("Current URL and page title", current_url=page.url, page_title=page.title())
                 raise e
             except FatalError as e:
                 logger.error(f"Login failed: {e}")
-                if config.DEBUG:
-                    print(f"[DEBUG] Current URL: {page.url}")
-                    print(f"[DEBUG] Page title: {page.title()}")
-                    print("[DEBUG] Press Enter to continue or Ctrl+C to exit...")
-                    input()
+                debug_pause("Current URL and page title", current_url=page.url, page_title=page.title())
                 raise e
             except Exception as e:
                 logger.error(f"Unexpected error during login: {e}")
@@ -504,13 +496,13 @@ def scrape_jobs_from_search(
                     
                     if linkedin_cookies:
                         cookie_manager.save_cookies(linkedin_cookies)
-                        print(f"[INFO] Saved {len(linkedin_cookies)} LinkedIn session cookies")
+                        logger.info("Saved LinkedIn session cookies", cookie_count=len(linkedin_cookies))
                     else:
                         logger.warning("No LinkedIn cookies found to save")
                         
                 except Exception as e:
                     logger.warning(f"Failed to save cookies: {e}")
-                    print(f"[WARN] Could not save cookies for future sessions: {e}")
+                    logger.warning("Could not save cookies for future sessions", error=str(e))
 
         #  GO TO JOBS PAGE FIRST (like before)
         logger.info("Navigating to LinkedIn Jobs page initially")
@@ -524,32 +516,19 @@ def scrape_jobs_from_search(
             logger.info("Successfully navigated to LinkedIn Jobs page")
             
             # Debug pause after initial navigation
-            if config.DEBUG:
-                print("[DEBUG] ⏸️  Successfully navigated to LinkedIn Jobs page")
-                print(f"[DEBUG] Current URL: {page.url}")
-                print(f"[DEBUG] Page title: {page.title()}")
-                print("[DEBUG] Press Enter to continue to job search...")
-                try:
-                    input()
-                except (EOFError, KeyboardInterrupt):
-                    print("[DEBUG] Continuing automatically...")
+            debug_pause("Successfully navigated to LinkedIn Jobs page", 
+                       current_url=page.url, 
+                       page_title=page.title())
                     
         except Exception as e:
-            print(f"[WARN] Failed to navigate to LinkedIn Jobs page: {e}")
-            print("[INFO] Continuing with direct search URL navigation...")
+            logger.warning("Failed to navigate to LinkedIn Jobs page", error=str(e))
+            logger.info("Continuing with direct search URL navigation")
         
         #  GO TO SEARCH PAGE 
         logger.info("Navigating to job search URL", search_url=search_url)
         
         # Debug pause before search navigation
-        if config.DEBUG:
-            print("[DEBUG] ⏸️  About to navigate to specific job search URL")
-            print(f"[DEBUG] Search URL: {search_url}")
-            print("[DEBUG] Press Enter to continue...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                print("[DEBUG] Continuing automatically...")
+        debug_pause("About to navigate to specific job search URL", search_url=search_url)
         
         # Enhanced navigation with retry logic and error handling
         navigation_success = False
@@ -557,12 +536,12 @@ def scrape_jobs_from_search(
         
         for attempt in range(max_navigation_attempts):
             try:
-                print(f"[INFO] Navigation attempt {attempt + 1}/{max_navigation_attempts}")
+                logger.info("Navigation attempt", attempt=attempt + 1, max_attempts=max_navigation_attempts)
                 
                 # Add random delay to avoid rate limiting
                 if attempt > 0:
                     delay = 2 + (attempt * 2)  # 2s, 4s, 6s delays
-                    print(f"[INFO] Waiting {delay}s before retry...")
+                    logger.info("Waiting before retry", delay=delay)
                     time.sleep(delay)
                 
                 # Try to navigate to the search page
@@ -571,135 +550,122 @@ def scrape_jobs_from_search(
                 # Verify we're on the correct page
                 current_url = page.url
                 if "linkedin.com/jobs" in current_url or "linkedin.com/search" in current_url:
-                    print(f"[INFO] Successfully navigated to job search page: {current_url}")
+                    logger.info("Successfully navigated to job search page", current_url=current_url)
                     navigation_success = True
                     break
                 else:
-                    print(f"[WARN] Unexpected URL after navigation: {current_url}")
+                    logger.warning("Unexpected URL after navigation", current_url=current_url)
                     if attempt < max_navigation_attempts - 1:
-                        print(f"[INFO] Retrying navigation...")
+                        logger.info("Retrying navigation")
                         continue
                     else:
-                        print(f"[ERROR] Failed to reach job search page after {max_navigation_attempts} attempts")
+                        logger.error("Failed to reach job search page", max_attempts=max_navigation_attempts)
                         raise RetryableError("Failed to navigate to job search page")
                         
             except PlaywrightTimeout as e:
-                print(f"[WARN] Navigation timeout on attempt {attempt + 1}: {e}")
+                logger.warning("Navigation timeout", attempt=attempt + 1, error=str(e))
                 if attempt < max_navigation_attempts - 1:
                     print(f"[INFO] Retrying navigation...")
                     continue
                 else:
-                    print(f"[ERROR] Navigation failed after {max_navigation_attempts} attempts due to timeout")
+                    logger.error("Navigation failed due to timeout", max_attempts=max_navigation_attempts)
                     raise RetryableError(f"Navigation timeout: {e}")
                     
             except Exception as e:
                 error_msg = str(e)
-                print(f"[WARN] Navigation error on attempt {attempt + 1}: {error_msg}")
+                logger.warning("Navigation error", attempt=attempt + 1, error_msg=error_msg)
                 
                 # Check for specific error types
                 if "ERR_HTTP_RESPONSE_CODE_FAILURE" in error_msg:
-                    print(f"[INFO] LinkedIn returned HTTP error - likely anti-bot protection")
-                    print(f"[INFO] This may be due to:")
-                    print(f"  • LinkedIn's anti-bot measures")
-                    print(f"  • Rate limiting from too many requests")
-                    print(f"  • IP address being flagged")
-                    print(f"  • Browser fingerprint detection")
+                    logger.info("LinkedIn returned HTTP error - likely anti-bot protection")
+                    logger.info("This may be due to:")
+                    logger.info("• LinkedIn's anti-bot measures")
+                    logger.info("• Rate limiting from too many requests")
+                    logger.info("• IP address being flagged")
+                    logger.info("• Browser fingerprint detection")
                     
                     if attempt < max_navigation_attempts - 1:
-                        print(f"[INFO] Retrying with longer delay...")
+                        logger.info("Retrying with longer delay")
                         # Add extra delay for anti-bot protection
                         extra_delay = 5 + (attempt * 3)  # 5s, 8s, 11s delays
-                        print(f"[INFO] Adding extra {extra_delay}s delay for anti-bot protection...")
+                        logger.info("Adding extra delay for anti-bot protection", extra_delay=extra_delay)
                         time.sleep(extra_delay)
                         continue
                     else:
-                        print(f"[ERROR] LinkedIn blocked navigation after {max_navigation_attempts} attempts")
-                        print(f"[ERROR] Suggestions:")
-                        print(f"  • Wait 10-15 minutes before trying again")
-                        print(f"  • Try using a different IP address/VPN")
-                        print(f"  • Log into LinkedIn manually first to verify account")
-                        print(f"  • Check if LinkedIn has flagged your account")
+                        logger.error("LinkedIn blocked navigation", max_attempts=max_navigation_attempts)
+                        logger.error("Suggestions:")
+                        logger.error("• Wait 10-15 minutes before trying again")
+                        logger.error("• Try using a different IP address/VPN")
+                        logger.error("• Log into LinkedIn manually first to verify account")
+                        logger.error("• Check if LinkedIn has flagged your account")
                         raise RetryableError("LinkedIn blocked navigation - try again later")
                         
                 elif "net::ERR_" in error_msg:
-                    print(f"[INFO] Network error detected: {error_msg}")
+                    logger.info("Network error detected", error_msg=error_msg)
                     if attempt < max_navigation_attempts - 1:
-                        print(f"[INFO] Retrying navigation...")
+                        logger.info("Retrying navigation")
                         continue
                     else:
-                        print(f"[ERROR] Network error persisted after {max_navigation_attempts} attempts")
+                        logger.error("Network error persisted", max_attempts=max_navigation_attempts)
                         raise RetryableError(f"Network error: {e}")
                         
                 else:
-                    print(f"[ERROR] Unexpected navigation error: {error_msg}")
+                    logger.error("Unexpected navigation error", error_msg=error_msg)
                     if attempt < max_navigation_attempts - 1:
-                        print(f"[INFO] Retrying navigation...")
+                        logger.info("Retrying navigation")
                         continue
                     else:
                         raise RetryableError(f"Navigation failed: {e}")
         
         if not navigation_success:
-            print(f"[ERROR] Failed to navigate to job search page after all attempts")
-            print(f"[INFO] Attempting fallback navigation strategy...")
+            logger.error("Failed to navigate to job search page after all attempts")
+            logger.info("Attempting fallback navigation strategy")
             
             # Fallback: Try navigating to LinkedIn home first, then to jobs
             try:
-                print(f"[INFO] Fallback: Navigating to LinkedIn home page first...")
+                logger.info("Fallback: Navigating to LinkedIn home page first")
                 page.goto("https://www.linkedin.com/feed/", timeout=config.TIMEOUTS["search_page"])
                 time.sleep(3)  # Wait for page to load
                 
-                print(f"[INFO] Fallback: Now navigating to job search...")
+                logger.info("Fallback: Now navigating to job search")
                 page.goto(search_url, timeout=config.TIMEOUTS["search_page"])
                 
                 current_url = page.url
                 if "linkedin.com/jobs" in current_url or "linkedin.com/search" in current_url:
-                    print(f"[INFO] Fallback navigation successful: {current_url}")
+                    logger.info("Fallback navigation successful", current_url=current_url)
                     navigation_success = True
                 else:
-                    print(f"[ERROR] Fallback navigation also failed: {current_url}")
+                    logger.error("Fallback navigation also failed", current_url=current_url)
                     raise RetryableError("All navigation attempts failed")
                     
             except Exception as fallback_error:
-                print(f"[ERROR] Fallback navigation failed: {fallback_error}")
+                logger.error("Fallback navigation failed", error=str(fallback_error))
                 raise RetryableError("Navigation failed after all retry attempts and fallback")
         
         if not navigation_success:
-            print(f"[ERROR] Failed to navigate to job search page after all attempts")
+            logger.error("Failed to navigate to job search page after all attempts")
             raise RetryableError("Navigation failed after all retry attempts")
         
         if config.DEBUG:
-            print(f"[DEBUG] Current URL: {page.url}")
-            print(f"[DEBUG] Page title: {page.title()}")
+            logger.debug("Current URL and page title", current_url=page.url, page_title=page.title())
 
         #  COLLECT JOB LINKS 
         logger.info("Collecting job links")
         
         # Debug pause before job collection
-        if config.DEBUG:
-            print("[DEBUG] ⏸️  About to start collecting job links")
-            print(f"[DEBUG] Max jobs: {max_jobs}")
-            print("[DEBUG] Press Enter to continue...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                print("[DEBUG] Continuing automatically...")
+        # Debug pause before collecting job links
+        debug_pause("About to start collecting job links", max_jobs=max_jobs)
         
         job_links = collect_job_links_with_pagination(page, search_url, max_jobs=max_jobs)
         if not job_links:
-            print("[WARN] No job links found")
+            logger.warning("No job links found")
             return []
         
         logger.info("Found job links", count=len(job_links))
         
         # Debug pause after job collection
-        if config.DEBUG:
-            print("[DEBUG] ⏸️  Job collection completed")
-            print(f"[DEBUG] Found {len(job_links)} job links")
-            print("[DEBUG] Press Enter to continue with job processing...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                print("[DEBUG] Continuing automatically...")
+        # Debug pause after job collection
+        debug_pause("Job collection completed", job_count=len(job_links))
 
         #  LOAD PERSONAL INFO 
         logger.info("Loading personal information")
@@ -707,7 +673,7 @@ def scrape_jobs_from_search(
             with open(personal_info_path, "r", encoding="utf-8") as f:
                 personal_info = yaml.safe_load(f)
         except Exception as e:
-            print(f"[ERROR] Could not load {personal_info_path}: {e}")
+            logger.error("Could not load personal info", file_path=personal_info_path, error=str(e))
             return []
 
         # Build experiences list
@@ -728,32 +694,20 @@ def scrape_jobs_from_search(
         jobs_data = []  
         
         # Debug pause before starting job processing loop
-        if config.DEBUG:
-            print("[DEBUG] ⏸️  About to start job processing loop")
-            print(f"[DEBUG] Will process {len(job_links)} jobs")
-            print("[DEBUG] Press Enter to continue...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                print("[DEBUG] Continuing automatically...")
+        # Debug pause before job processing loop
+        debug_pause("About to start job processing loop", job_count=len(job_links))
         
         for idx, job_url in enumerate(job_links, start=1):
             # Check if browser was manually closed
             if browser_monitor.should_exit():
-                print("\n[INFO] Browser was manually closed - stopping job processing")
+                logger.info("Browser was manually closed - stopping job processing")
                 break
                 
-            print(f"\n[INFO] [{idx}/{len(job_links)}] Opening job page: {job_url}")
+            logger.info("Opening job page", job_index=idx, total_jobs=len(job_links), job_url=job_url)
             
             # Debug pause before each job
-            if config.DEBUG:
-                print(f"[DEBUG] ⏸️  About to process job {idx}/{len(job_links)}")
-                print(f"[DEBUG] Job URL: {job_url}")
-                print("[DEBUG] Press Enter to continue...")
-                try:
-                    input()
-                except (EOFError, KeyboardInterrupt):
-                    print("[DEBUG] Continuing automatically...")
+            # Debug pause before processing each job
+            debug_pause("About to process job", job_index=idx, total_jobs=len(job_links), job_url=job_url)
 
             with ErrorContext(f"Processing job {idx}/{len(job_links)}", page) as job_context:
                 job_context.add_context("job_url", job_url)
@@ -762,7 +716,7 @@ def scrape_jobs_from_search(
                 try:
                     # [OK] Check if browser was manually closed
                     if browser_monitor.should_exit():
-                        print("\n[INFO] Browser was manually closed - stopping job processing")
+                        logger.info("Browser was manually closed - stopping job processing")
                         break
                         
                     # [OK] Check if browser context is still valid
@@ -770,8 +724,8 @@ def scrape_jobs_from_search(
                         # Test if context is still valid by checking if we can create a page
                         job_page = context.new_page()
                     except Exception as context_error:
-                        print(f"[ERROR] Browser context is no longer valid: {context_error}")
-                        print(f"[ERROR] Cannot process more jobs. Stopping.")
+                        logger.error("Browser context is no longer valid", error=str(context_error))
+                        logger.error("Cannot process more jobs. Stopping.")
                         break
 
                     # Add delay between job page requests to avoid rate limiting
@@ -787,20 +741,20 @@ def scrape_jobs_from_search(
                         if scrape_jobs_from_search.consecutive_failures > 0:
                             multiplier = 1 + (scrape_jobs_from_search.consecutive_failures * 0.5)
                             delay = random.uniform(base_min * multiplier, base_max * multiplier)
-                            print(f"  [INFO] Waiting {delay:.1f}s (increased due to {scrape_jobs_from_search.consecutive_failures} recent failure(s))...")
+                            logger.info("Waiting", delay=delay, reason=f"increased due to {scrape_jobs_from_search.consecutive_failures} recent failure(s)")
                         else:
                             delay = random.uniform(base_min, base_max)
-                            print(f"  [INFO] Waiting {delay:.1f}s to avoid rate limiting...")
+                            logger.info("Waiting to avoid rate limiting", delay=delay)
                         time.sleep(delay)
                     
                     try:
                         job_page.goto(job_url, timeout=config.TIMEOUTS["job_page"])
                     except TargetClosedError:
-                        print(f"[WARN] LinkedIn closed the tab unexpectedly for {job_url}. Skipping.")
+                        logger.warning("LinkedIn closed the tab unexpectedly", job_url=job_url)
                         job_context.add_context("error", "TargetClosedError")
                         continue
                     except PlaywrightTimeout:
-                        print(f"[WARN] Timeout loading {job_url}. Skipping.")
+                        logger.warning("Timeout loading job", job_url=job_url)
                         
                         # Track timeout failures for adaptive delay
                         if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
@@ -809,7 +763,7 @@ def scrape_jobs_from_search(
                         
                         # Wait longer after timeout
                         wait_time = random.uniform(*config.DELAYS["graphql_failure_wait"])
-                        print(f"  [WARN] Waiting {wait_time:.1f}s after timeout...")
+                        logger.warning("Waiting after timeout", wait_time=wait_time)
                         time.sleep(wait_time)
                         
                         job_context.add_context("error", "PlaywrightTimeout")
@@ -817,7 +771,7 @@ def scrape_jobs_from_search(
                     except Exception as e:
                         error_msg = str(e)
                         if "ERR_HTTP_RESPONSE_CODE_FAILURE" in error_msg:
-                            print(f"[WARN] LinkedIn rate limiting detected for {job_url}. Skipping.")
+                            logger.warning("LinkedIn rate limiting detected", job_url=job_url)
                             
                             # Track rate limit failures for adaptive delay
                             if not hasattr(scrape_jobs_from_search, 'consecutive_failures'):
@@ -826,23 +780,23 @@ def scrape_jobs_from_search(
                             
                             # Wait longer after rate limit detection
                             wait_time = random.uniform(*config.DELAYS["rate_limit_wait"])
-                            print(f"  [WARN] Waiting {wait_time:.1f}s after rate limit detection...")
+                            logger.warning("Waiting after rate limit detection", wait_time=wait_time)
                             time.sleep(wait_time)
                             
                             job_context.add_context("error", "RateLimited")
                             continue
                         elif "net::ERR_" in error_msg:
-                            print(f"[WARN] Network error for {job_url}: {error_msg}. Skipping.")
+                            logger.warning("Network error for job", job_url=job_url, error_msg=error_msg)
                             job_context.add_context("error", f"NetworkError: {error_msg}")
                             continue
                         else:
-                            print(f"[WARN] Unexpected error loading {job_url}: {error_msg}. Skipping.")
+                            logger.warning("Unexpected error loading job", job_url=job_url, error_msg=error_msg)
                             job_context.add_context("error", f"UnexpectedError: {error_msg}")
                             continue
 
                     # [OK] Detect expired/unavailable job
                     if job_page.locator(config.LINKEDIN_SELECTORS["job_detail"]["unavailable"]).count():
-                        print(f"[INFO] Job {job_url} is unavailable or expired. Skipping.")
+                        logger.info("Job is unavailable or expired", job_url=job_url)
                         job_page.close()
                         continue
 
@@ -854,7 +808,7 @@ def scrape_jobs_from_search(
                     
                     # Enhanced GraphQL failure detection and handling
                     if config.DEBUG:
-                        print(f"  [DEBUG] Checking for GraphQL loading indicators...")
+                        logger.debug("Checking for GraphQL loading indicators")
                     
                     # Check for GraphQL-specific loading indicators
                     graphql_loading_selectors = [
@@ -884,7 +838,7 @@ def scrape_jobs_from_search(
                         # Check for GraphQL errors first
                         for error_selector in graphql_error_selectors:
                             if job_page.locator(error_selector).count() > 0:
-                                print(f"  [ERROR] GraphQL error detected: {error_selector}")
+                                logger.error("GraphQL error detected", error_selector=error_selector)
                                 graphql_error_detected = True
                                 break
                         
@@ -900,28 +854,28 @@ def scrape_jobs_from_search(
                         
                         if not loading_detected:
                             if config.DEBUG:
-                                print(f"  [DEBUG] No GraphQL loading indicators detected")
+                                logger.debug("No GraphQL loading indicators detected")
                             break
                         else:
                             if config.DEBUG:
-                                print(f"  [DEBUG] GraphQL loading indicators still present, waiting...")
+                                logger.debug("GraphQL loading indicators still present, waiting")
                             time.sleep(0.5)
                     
                     # Handle GraphQL errors
                     if graphql_error_detected:
-                        print(f"  [ERROR] GraphQL error detected on job page - likely bot detection")
-                        print(f"  [INFO] This may indicate:")
-                        print(f"    • LinkedIn has detected automated behavior")
-                        print(f"    • Session cookies are invalid/expired")
-                        print(f"    • Rate limiting is in effect")
-                        print(f"    • IP address is flagged")
+                        logger.error("GraphQL error detected on job page - likely bot detection")
+                        logger.info("This may indicate:")
+                        logger.info("• LinkedIn has detected automated behavior")
+                        logger.info("• Session cookies are invalid/expired")
+                        logger.info("• Rate limiting is in effect")
+                        logger.info("• IP address is flagged")
                         
                         # Try to recover session by refreshing cookies
-                        print(f"  [INFO] Attempting session recovery...")
+                        logger.info("Attempting session recovery")
                         try:
                             cookie_refreshed = cookie_manager.refresh_cookies_if_needed(context, job_page)
                             if cookie_refreshed:
-                                print(f"  [INFO] Session cookies refreshed - retrying job page")
+                                logger.info("Session cookies refreshed - retrying job page")
                                 # Close current page and retry
                                 job_page.close()
                                 time.sleep(2)
@@ -1162,11 +1116,11 @@ def scrape_jobs_from_search(
                         if not pdf_path or not os.path.exists(pdf_path):
                             raise Exception("PDF file was not created or is not accessible")
                         
-                        print(f"[INFO] Resume generated: {pdf_path}")
+                        logger.info("Resume generated", pdf_path=pdf_path)
                         job_context.add_context("resume_path", pdf_path)
                         
                     except Exception as e:
-                        print(f"  [ERROR] Resume generation failed for {title} @ {company}: {e}")
+                        logger.error("Resume generation failed", title=title, company=company, error=str(e))
                         job_context.add_context("error", f"Resume generation failed: {e}")
                         
                         # Try fallback PDF generation
@@ -1193,7 +1147,7 @@ def scrape_jobs_from_search(
                     if config.AUTO_APPLY:
                         if config.DEBUG:
                             print("\n[DEBUG] About to attempt LinkedIn Easy Apply...")
-                        print("  [INFO] Attempting LinkedIn Easy Apply")
+                        logger.info("Attempting LinkedIn Easy Apply")
                         
                         try:
                             # Check if browser was manually closed before Easy Apply

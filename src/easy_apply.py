@@ -32,42 +32,22 @@ def step_through_easy_apply(job_page: Page) -> bool:
     additional questions, and ensuring we don't accidentally follow companies.
     """
     # Debug pause before starting Easy Apply steps
-    if config.DEBUG:
-        print("[DEBUG] ⏸️  About to start stepping through Easy Apply modal")
-        print("[DEBUG] Press Enter to continue...")
-        try:
-            input()
-        except (EOFError, KeyboardInterrupt):
-            print("[DEBUG] Continuing automatically...")
+    debug_pause("About to start stepping through Easy Apply modal")
     
     for step in range(1, 8):
-        if config.DEBUG:
-            print(f"[DEBUG] Step {step}: Checking for buttons and form elements")
-            print(f"[DEBUG] ⏸️  Step {step} - Press Enter to continue...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                print("[DEBUG] Continuing automatically...")
+        # Debug pause for each step
+        debug_pause("Checking for buttons and form elements", step=step)
 
         # [OK] If a resume upload section appears, handle it
         upload_section = job_page.locator(config.LINKEDIN_SELECTORS["resume_upload"]["upload_button"])
         if upload_section.count():
-            if config.DEBUG:
-                print(f"[DEBUG] Resume upload section detected at step {step}.")
-                print("[DEBUG] ⏸️  About to handle resume upload - Press Enter to continue...")
-                try:
-                    input()
-                except (EOFError, KeyboardInterrupt):
-                    print("[DEBUG] Continuing automatically...")
+            # Debug pause for resume upload
+            debug_pause("Resume upload section detected", step=step)
             check_and_upload_resume(job_page)
 
         # [OK] Handle Additional Questions (radio, dropdown, etc.)
-        if config.DEBUG:
-            print(f"[DEBUG] ⏸️  Step {step} - About to handle additional questions - Press Enter to continue...")
-            try:
-                input()
-            except (EOFError, KeyboardInterrupt):
-                print("[DEBUG] Continuing automatically...")
+        # Debug pause for additional questions
+        debug_pause("About to handle additional questions", step=step)
         handle_additional_questions(job_page)
 
         # [OK] Footer buttons
@@ -84,29 +64,29 @@ def step_through_easy_apply(job_page: Page) -> bool:
                 try:
                     if follow_checkbox.is_checked():
                         try:
-                            print("[DEBUG] [RETRY] Clicking label to uncheck")
+                            logger.debug("Clicking label to uncheck follow box")
                             job_page.locator(config.LINKEDIN_SELECTORS["easy_apply"]["follow_label"]).click()
                         except:
-                            print("[WARN] [WARN] Label click failed, forcing via JS.")
+                            logger.warning("Label click failed, forcing via JS")
                             job_page.evaluate("el => el.checked = false", follow_checkbox)
                     else:
-                        print("[DEBUG] [OK] Follow box already unchecked.")
+                        logger.debug("Follow box already unchecked")
                 except Exception as e:
-                    print(f"[WARN] [WARN] Could not verify/uncheck follow box: {e}")
+                    logger.warning("Could not verify/uncheck follow box", error=str(e))
 
             # [OK] Now submit the application
-            print(f"[DEBUG] 🟩 Found 'Submit application' button at step {step}.")
+            logger.debug("Found Submit application button", step=step)
             
             # Human-like hesitation before final submit
             HumanBehavior.simulate_hesitation(0.5, 1.2)
             HumanBehavior.human_like_click(job_page, submit_btn, move_to_element=True)
             time.sleep(1.2)
-            print(f"[DEBUG] [OK] Application submitted at step {step}.")
+            logger.debug("Application submitted", step=step)
             return True
 
         # 🔽 *** Handle REVIEW ***
         elif review_btn.count():
-            print(f"[DEBUG] 🟦 Found 'Review your application' button at step {step}.")
+            logger.debug("Found Review your application button", step=step)
             HumanBehavior.simulate_hesitation(0.3, 0.7)
             HumanBehavior.human_like_click(job_page, review_btn, move_to_element=True)
             time.sleep(1)
@@ -114,7 +94,7 @@ def step_through_easy_apply(job_page: Page) -> bool:
 
         # 🔽 *** Handle NEXT ***
         elif next_btn.count():
-            print(f"[DEBUG] 🟨 Found 'Next' button at step {step}.")
+            logger.debug("Found Next button", step=step)
             HumanBehavior.simulate_hesitation(0.2, 0.6)
             HumanBehavior.human_like_click(job_page, next_btn, move_to_element=True)
             time.sleep(1)
@@ -122,7 +102,7 @@ def step_through_easy_apply(job_page: Page) -> bool:
 
         else:
             if config.DEBUG:
-                print(f"[DEBUG] [WARN] No Next/Review/Submit button found at step {step}. Breaking out.")
+                logger.debug("No Next/Review/Submit button found", step=step)
             break
 
     return False
@@ -206,10 +186,10 @@ def check_and_upload_resume(job_page):
     upload_button = job_page.locator(config.LINKEDIN_SELECTORS["resume_upload"]["upload_button"])
     if not upload_button.count():
         if config.DEBUG:
-            print("[DEBUG] 🟦 No 'Upload resume' button on this step.")
+            logger.debug("No Upload resume button on this step")
         return
 
-    print("[INFO] [RESUME] 'Upload resume' button detected. Uploading resume...")
+    logger.info("Upload resume button detected - uploading resume")
     
     if config.DEBUG:
         debug_pause("Resume upload button detected, preparing to upload...", 0.3)
@@ -218,25 +198,25 @@ def check_and_upload_resume(job_page):
     file_input = job_page.locator(config.LINKEDIN_SELECTORS["resume_upload"]["file_input"])
 
     if file_input.count() != 1:
-        print(f"[ERROR] [ERROR] Found {file_input.count()} resume inputs  expected 1.")
+        logger.error("Found unexpected number of resume inputs", count=file_input.count(), expected=1)
         return
 
     # [OK] Find the newest resume file
     resume_dir = str(config.FILE_PATHS["resumes_dir"])
     resume_files = glob.glob(os.path.join(resume_dir, "Borgese_*.pdf"))
     if not resume_files:
-        print("[ERROR] [ERROR] No resume files found in output/resumes.")
+        logger.error("No resume files found in output/resumes")
         return
 
     latest_resume = max(resume_files, key=os.path.getmtime)
     
     if config.DEBUG:
-        print(f"[DEBUG] 📄 Uploading resume: {latest_resume}")
+        logger.debug("Uploading resume", resume_path=latest_resume)
 
     # [OK] Upload to LinkedIn resume field
     file_input.set_input_files(latest_resume)
 
-    print(f"[INFO] [OK] Resume uploaded: {latest_resume}")
+    logger.info("Resume uploaded", resume_path=latest_resume)
     debug_pause("Resume uploaded, waiting for confirmation...", 2.0)
 
 
@@ -254,7 +234,7 @@ def handle_additional_questions(job_page):
     try:
         radio_fieldsets = job_page.locator(config.LINKEDIN_SELECTORS["form_fields"]["radio_fieldset"])
         if config.DEBUG:
-            print(f"[DEBUG] Found {radio_fieldsets.count()} radio fieldsets")
+            logger.debug("Found radio fieldsets", count=radio_fieldsets.count())
             if radio_fieldsets.count() > 0:
                 debug_pause(f"Processing {radio_fieldsets.count()} radio questions...", 0.2)
         
@@ -273,24 +253,24 @@ def handle_additional_questions(job_page):
                         break
 
                 if pre_selected:
-                    print(f"[INFO] [OK] '{question_text}' already answered with '{pre_selected}'  skipping.")
+                    logger.info("Question already answered", question=question_text, answer=pre_selected)
                     continue  # [SKIP] Skip YAML lookup and move on
 
                 # [OK] 2. No prefill? Look for saved YAML answer
                 if not saved_answer:
-                    print(f"[DEBUG] 🛑 No saved answer for radio Q '{question_text}'  skipping.")
+                    logger.debug("No saved answer for radio question", question=question_text)
                     continue
 
                 # [OK] Find the radio input that matches the saved answer
                 radio_input = fieldset.locator(f"input[type='radio'][value='{saved_answer}']")
                 if not radio_input.count():
-                    print(f"[WARN] [WARN] Could not find radio option '{saved_answer}' for '{question_text}'")
+                    logger.warning("Could not find radio option", question=question_text, answer=saved_answer)
                     continue
 
                 # [OK] Get the label tied to this radio
                 radio_id = radio_input.get_attribute("id")
                 if not radio_id:
-                    print(f"[WARN] [WARN] Radio input missing 'id' for '{question_text}'")
+                    logger.warning("Radio input missing ID", question=question_text)
                     continue
 
                 label = job_page.locator(f"label[for='{radio_id}']")
@@ -301,35 +281,35 @@ def handle_additional_questions(job_page):
                         
                         # Human-like click on radio option
                         HumanBehavior.human_like_click(job_page, label, move_to_element=True)
-                        print(f"[INFO] [OK] Selected '{saved_answer}' for radio Q: '{question_text}'")
+                        logger.info("Selected radio option", question=question_text, answer=saved_answer)
                     except Exception as e:
-                        print(f"[WARN] [WARN] Human-like click failed for '{saved_answer}', using fallback. ({e})")
+                        logger.warning("Human-like click failed for radio option", question=question_text, answer=saved_answer, error=str(e))
                         label.scroll_into_view_if_needed()
                         time.sleep(config.DELAYS["ui_stability"])
                         try:
                             label.click(timeout=config.TIMEOUTS["radio_click"])
                         except:
                             job_page.evaluate("el => el.click()", label)
-                        print(f"[INFO] [OK] Fallback click for '{saved_answer}' on '{question_text}'")
+                        logger.info("Fallback click successful for radio option", question=question_text, answer=saved_answer)
                 else:
-                    print(f"[WARN] [WARN] No label found for radio '{saved_answer}' on '{question_text}'")
+                    logger.warning("No label found for radio option", question=question_text, answer=saved_answer)
 
             except Exception as e:
                 if config.DEBUG:
                     print(f"[DEBUG] Radio handling failed for a question: {e}")
                     print(f"[DEBUG] Fieldset type: {type(fieldset)}")
                     print(f"[DEBUG] Fieldset value: {fieldset}")
-                print(f"[ERROR] [ERROR] Radio handling failed for a question: {e}")
+                logger.error("Radio handling failed for question", question=question_text, error=str(e))
     except Exception as e:
         if config.DEBUG:
             print(f"[DEBUG] Error accessing radio fieldsets: {e}")
-        print(f"[WARN] [WARN] Could not process radio fieldsets: {e}")
+        logger.warning("Could not process radio fieldsets", error=str(e))
 
     # --- DROPDOWN QUESTIONS ---
     try:
         dropdowns = job_page.locator(config.LINKEDIN_SELECTORS["form_fields"]["dropdown"])
         if config.DEBUG:
-            print(f"[DEBUG] Found {dropdowns.count()} dropdowns")
+            logger.debug("Found dropdowns", count=dropdowns.count())
             if dropdowns.count() > 0:
                 debug_pause(f"Processing {dropdowns.count()} dropdown questions...", 0.2)
         ignore_keywords = config.QUESTION_CONFIG["ignore_keywords"]
@@ -348,13 +328,13 @@ def handle_additional_questions(job_page):
                 continue
             
             if any(word in question_text for word in ignore_keywords):
-                print(f"[INFO] ⏭️ Skipping '{question_text}'  handled by LinkedIn profile.")
+                logger.info("Skipping LinkedIn profile field", question=question_text)
                 continue
 
             selected_value = dropdowns.nth(i).input_value()
             if selected_value and selected_value != "Select an option":
                 if config.DEBUG:
-                    print(f"[DEBUG] [OK] '{question_text}' already has value '{selected_value}'  skipping.")
+                    logger.info("Dropdown question already has value", question=question_text, value=selected_value)
                 continue
 
             # Use saved or new answer
@@ -362,7 +342,7 @@ def handle_additional_questions(job_page):
             if not saved_answer:
                 saved_answer = determine_answer(question_text)
                 save_answer_to_yaml(question_text, saved_answer)
-                print(f"[INFO] [OK] Determined answer for dropdown Q: '{question_text}' -> '{saved_answer}'")
+                logger.info("Determined answer for dropdown question", question=question_text, answer=saved_answer)
             else:
                 if config.DEBUG:
                     print(f"[DEBUG] 🔁 Using saved answer for dropdown Q '{question_text}': {saved_answer}")
@@ -385,21 +365,21 @@ def handle_additional_questions(job_page):
                 
                 dropdown.select_option(saved_answer)
                 HumanBehavior.simulate_hesitation(0.1, 0.3)  # Pause after selection
-                print(f"[INFO] [TAG] Dropdown Q: '{question_text}' -> '{saved_answer}'")
+                logger.info("Dropdown question answered", question=question_text, answer=saved_answer)
             except Exception as e:
                 # Try to print available options if possible
                 try:
                     options = dropdown.locator("option")
                     option_texts = [options.nth(j).inner_text().strip() for j in range(options.count())]
-                    print(f"[WARN] [WARN] Could not select '{saved_answer}' for '{question_text}': {e}")
+                    logger.warning("Could not select dropdown option", question=question_text, answer=saved_answer, error=str(e))
                     print(f"[WARN] [WARN] Available options for '{question_text}': {option_texts}")
                 except Exception as opt_e:
-                    print(f"[WARN] [WARN] Could not select '{saved_answer}' for '{question_text}': {e}")
+                    logger.warning("Could not select dropdown option", question=question_text, answer=saved_answer, error=str(e))
                     print(f"[WARN] [WARN] Also failed to retrieve options: {opt_e}")
     except Exception as e:
         if config.DEBUG:
             print(f"[DEBUG] Error processing dropdowns: {e}")
-        print(f"[WARN] [WARN] Could not process dropdowns: {e}")
+        logger.warning("Could not process dropdowns", error=str(e))
 
 # --------------------------
 # Main Easy Apply Flow
@@ -418,14 +398,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
     
     # Debug pause before starting Easy Apply
     if config.DEBUG:
-        print("[DEBUG] ⏸️  About to start Easy Apply process")
-        print(f"[DEBUG] Resume path: {resume_path}")
-        print(f"[DEBUG] Job URL: {job_url}")
-        print("[DEBUG] Press Enter to continue...")
-        try:
-            input()
-        except (EOFError, KeyboardInterrupt):
-            print("[DEBUG] Continuing automatically...")
+        logger.debug("About to start Easy Apply process", resume_path=resume_path, job_url=job_url)
 
     def remove_from_json(url: str):
         """Removes a job URL from job_urls.json so it doesn't get retried."""
@@ -438,9 +411,9 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                 urls.remove(url)
                 with open("job_urls.json", "w") as f:
                     json.dump(urls, f, indent=2)
-                print(f"[INFO] [DELETE] Removed {url} from job_urls.json.")
+                logger.info("Removed job URL from job_urls.json", url=url)
         except Exception as e:
-            print(f"[WARN] [WARN] Could not remove {url} from job_urls.json: {e}")
+            logger.warning("Could not remove job URL from job_urls.json", url=url, error=str(e))
 
     try:
         # [OK] Check if the job was already applied for
@@ -464,7 +437,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         # Also check the page text content for the phrase
         page_text = job_page.inner_text("body").lower()
         if "no longer accepting applications" in page_text:
-            print("[INFO] [WARN] Job is no longer accepting applications. Skipping and removing from list.")
+            logger.info("Job is no longer accepting applications - skipping and removing from list")
             remove_from_json(job_url)
             return False
 
@@ -478,7 +451,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                 button = job_page.locator(selector)
                 if button.count() > 0:
                     easy_apply_button = button
-                    print(f"[DEBUG] Found Easy Apply button with selector: {selector}")
+                    logger.debug("Found Easy Apply button", selector=selector)
                     break
             except Exception as e:
                 continue
@@ -504,9 +477,9 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         try:
             HumanBehavior.human_like_click(job_page, easy_apply_button, move_to_element=True)
             if config.DEBUG:
-                print("[DEBUG] 🖱️ Human-like click on Easy Apply button.")
+                logger.debug("Human-like click on Easy Apply button")
         except Exception as e:
-            print(f"[WARN] [WARN] Human-like click failed, using fallback: {e}")
+            logger.warning("Human-like click failed, using fallback", error=str(e))
             easy_apply_button.hover()
             time.sleep(random.uniform(0.2, 0.5))
             easy_apply_button.click(timeout=config.TIMEOUTS["easy_apply_click"])
@@ -542,7 +515,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         max_steps = config.RETRY_CONFIG["max_steps"]  # Safeguard against infinite loops
         while step_counter <= max_steps:
             if config.DEBUG:
-                print(f"[DEBUG] 👣 Step {step_counter}/{max_steps}: Checking for questions, resume uploads, and buttons")
+                logger.debug("Step processing", step=step_counter, max_steps=max_steps)
 
             try:
                 # Handle resume upload (every step)
@@ -630,7 +603,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                     try:
                         if follow_checkbox.is_checked():
                             try:
-                                print("[DEBUG] [RETRY] Clicking label to uncheck")
+                                logger.debug("Clicking label to uncheck follow box")
                                 follow_label_selectors = config.LINKEDIN_SELECTORS["easy_apply"]["follow_label"]
                                 follow_label_selectors_list = follow_label_selectors if isinstance(follow_label_selectors, list) else [follow_label_selectors]
                                 
@@ -646,15 +619,15 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                                         continue
                                 
                                 if not label_clicked:
-                                    print("[WARN] [WARN] Label click failed, forcing via JS.")
+                                    logger.warning("Label click failed, forcing via JS")
                                     job_page.evaluate("el => el.checked = false", follow_checkbox.first)
                             except Exception as e:
                                 print(f"[WARN] [WARN] Could not uncheck follow box: {e}")
                                 job_page.evaluate("el => el.checked = false", follow_checkbox.first)
                         else:
-                            print("[DEBUG] [OK] Follow box already unchecked.")
+                            logger.debug("Follow box already unchecked")
                     except Exception as e:
-                        print(f"[WARN] [WARN] Could not verify/uncheck follow box: {e}")
+                        logger.warning("Could not verify/uncheck follow box", error=str(e))
 
                 if config.DEBUG:
                     print("[DEBUG] About to click SUBMIT")
@@ -686,7 +659,7 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
     
             # Check if we hit the max steps limit
             if step_counter > max_steps:
-                print(f"[ERROR] [ERROR] Reached maximum steps ({max_steps}) without completion. Possible infinite loop detected.")
+                logger.debug("Reached maximum steps without completion - possible infinite loop", max_steps=max_steps)
                 remove_from_json(job_url)
                 return False
                 break
@@ -706,16 +679,16 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
             confirmation_selectors = config.LINKEDIN_SELECTORS["application_status"]["confirmation"]
             for i, selector in enumerate(confirmation_selectors):
                 if job_page.locator(selector).count() > 0:
-                    print(f"[SUCCESS] [OK] Application submitted (confirmation method {i+1} found).")
+                    logger.info("Application submitted", confirmation_method=i+1)
                     success = True
                     break
 
             else:
-                print("[WARNING] [WARN] No explicit confirmation detected  submission status uncertain.")
+                logger.warning("No explicit confirmation detected - submission status uncertain")
                 success = False  # <-- mark as failed instead of assuming success
 
         except Exception as e:
-            print(f"[WARN] [WARN] Could not confirm submission visually: {e}")
+            logger.warning("Could not confirm submission visually", error=str(e))
             success = False
         
                 # [OK] Remove from JSON only if verified success
@@ -737,22 +710,22 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                     dismiss_buttons = job_page.locator(selector)
                     if dismiss_buttons.count() > 0:
                         dismiss_buttons.first.click()
-                        print(f"[DEBUG] [OK] Clicked first dismiss button with selector: {selector}")
+                        logger.debug("Clicked first dismiss button", selector=selector)
                         dismiss_clicked = True
                         break
                 except Exception as e:
                     if config.DEBUG:
-                        print(f"[DEBUG] Failed to click dismiss with selector {selector}: {e}")
+                        logger.debug("Failed to click dismiss", selector=selector, error=str(e))
                     continue
             
             if not dismiss_clicked:
-                print("[DEBUG] ❎ No dismiss button found with any selector.")
+                logger.debug("No dismiss button found with any selector")
         except Exception as e:
             print(f"[WARN] [WARN] Could not dismiss modal: {e}")
         return success
 
     except Exception as e:
-        print(f"[ERROR] [ERROR] Easy Apply failed: {e}")
+        logger.error("Easy Apply failed", error=str(e))
         
         # Debug mode: Add stop for inspection
         if config.DEBUG:

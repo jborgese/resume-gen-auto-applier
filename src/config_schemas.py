@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator, ConfigD
 from pydantic_settings import BaseSettings
 import os
 from datetime import datetime
+from src.logging_config import get_logger, log_function_call, log_error_context
+
+logger = get_logger(__name__)
 
 
 class Address(BaseModel):
@@ -324,7 +327,7 @@ class AppConfig(BaseModel):
             if not dir_path.exists():
                 try:
                     dir_path.mkdir(parents=True, exist_ok=True)
-                    print(f"[INFO] Created {dir_name} directory: {dir_path}")
+                    logger.info("Created directory", dir_name=dir_name, dir_path=str(dir_path))
                 except Exception as e:
                     raise ValueError(f"Cannot create {dir_name} directory {dir_path}: {e}")
         
@@ -376,7 +379,7 @@ class AppConfig(BaseModel):
                 keyword_data = json.load(f)
             keyword_weights = KeywordWeights(**keyword_data)
         except Exception as e:
-            print(f"[WARNING] Failed to load keyword weights from {keyword_weights_path}: {e}")
+            logger.warning("Failed to load keyword weights", file_path=str(keyword_weights_path), error=str(e))
             keyword_weights = KeywordWeights()
         
         # Load LinkedIn selectors (from config.py)

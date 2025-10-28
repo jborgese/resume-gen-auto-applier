@@ -6,9 +6,9 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from playwright.sync_api import Browser, BrowserContext, sync_playwright
-import logging
+from src.logging_config import get_logger, log_function_call, log_error_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class EnhancedBrowserConfig:
     """
