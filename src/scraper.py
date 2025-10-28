@@ -267,8 +267,29 @@ def scrape_jobs_from_search(
                 login_context.add_context("email", email)
                 login_context.add_context("search_url", search_url)
                 
+                # Debug pause before login
+                if config.DEBUG:
+                    print("[DEBUG] ⏸️  About to start LinkedIn login process")
+                    print(f"[DEBUG] Email: {email}")
+                    print("[DEBUG] Press Enter to continue...")
+                    try:
+                        input()
+                    except (EOFError, KeyboardInterrupt):
+                        print("[DEBUG] Continuing automatically...")
+                
                 print("[INFO] Navigating to LinkedIn login page")
                 page.goto("https://www.linkedin.com/login", timeout=config.TIMEOUTS["login"])
+                
+                # Debug pause after navigating to login page
+                if config.DEBUG:
+                    print("[DEBUG] ⏸️  Successfully navigated to LinkedIn login page")
+                    print(f"[DEBUG] Current URL: {page.url}")
+                    print(f"[DEBUG] Page title: {page.title()}")
+                    print("[DEBUG] Press Enter to continue with login...")
+                    try:
+                        input()
+                    except (EOFError, KeyboardInterrupt):
+                        print("[DEBUG] Continuing automatically...")
                 
                 # Check for UI changes before proceeding (with login context)
                 ui_changes = ui_handler.detect_ui_changes(context="login")
@@ -279,6 +300,15 @@ def scrape_jobs_from_search(
                 
                 print("[INFO] Entering credentials")
                 
+                # Debug pause before entering credentials
+                if config.DEBUG:
+                    print("[DEBUG] ⏸️  About to enter login credentials")
+                    print("[DEBUG] Press Enter to continue...")
+                    try:
+                        input()
+                    except (EOFError, KeyboardInterrupt):
+                        print("[DEBUG] Continuing automatically...")
+                
                 # Use fallback selectors for login
                 username_success = selector_fallback.safe_fill(
                     [config.LINKEDIN_SELECTORS["login"]["username"]], 
@@ -288,6 +318,15 @@ def scrape_jobs_from_search(
                 if not username_success:
                     raise LinkedInUIError("Could not find username input field")
                 
+                # Debug pause after username entry
+                if config.DEBUG:
+                    print("[DEBUG] ⏸️  Username entered successfully")
+                    print("[DEBUG] Press Enter to continue with password...")
+                    try:
+                        input()
+                    except (EOFError, KeyboardInterrupt):
+                        print("[DEBUG] Continuing automatically...")
+                
                 password_success = selector_fallback.safe_fill(
                     [config.LINKEDIN_SELECTORS["login"]["password"]], 
                     password, 
@@ -295,6 +334,15 @@ def scrape_jobs_from_search(
                 )
                 if not password_success:
                     raise LinkedInUIError("Could not find password input field")
+                
+                # Debug pause before clicking submit
+                if config.DEBUG:
+                    print("[DEBUG] ⏸️  Password entered successfully")
+                    print("[DEBUG] Press Enter to submit login...")
+                    try:
+                        input()
+                    except (EOFError, KeyboardInterrupt):
+                        print("[DEBUG] Continuing automatically...")
                 
                 submit_success = selector_fallback.safe_click(
                     [config.LINKEDIN_SELECTORS["login"]["submit"]], 
@@ -501,8 +549,50 @@ def scrape_jobs_from_search(
                     logger.warning(f"Failed to save cookies: {e}")
                     print(f"[WARN] Could not save cookies for future sessions: {e}")
 
+        #  GO TO JOBS PAGE FIRST (like before)
+        print("[INFO] Navigating to LinkedIn Jobs page initially...")
+        
+        # Debug pause before navigation
+        if config.DEBUG:
+            print("[DEBUG] ⏸️  About to navigate to LinkedIn Jobs page")
+            print("[DEBUG] Press Enter to continue...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("[DEBUG] Continuing automatically...")
+        
+        # Navigate to LinkedIn Jobs page first
+        try:
+            page.goto("https://www.linkedin.com/jobs/", timeout=config.TIMEOUTS["search_page"], wait_until="domcontentloaded")
+            print("[INFO] Successfully navigated to LinkedIn Jobs page")
+            
+            # Debug pause after initial navigation
+            if config.DEBUG:
+                print("[DEBUG] ⏸️  Successfully navigated to LinkedIn Jobs page")
+                print(f"[DEBUG] Current URL: {page.url}")
+                print(f"[DEBUG] Page title: {page.title()}")
+                print("[DEBUG] Press Enter to continue to job search...")
+                try:
+                    input()
+                except (EOFError, KeyboardInterrupt):
+                    print("[DEBUG] Continuing automatically...")
+                    
+        except Exception as e:
+            print(f"[WARN] Failed to navigate to LinkedIn Jobs page: {e}")
+            print("[INFO] Continuing with direct search URL navigation...")
+        
         #  GO TO SEARCH PAGE 
         print(f"[INFO] Navigating to job search URL: {search_url}")
+        
+        # Debug pause before search navigation
+        if config.DEBUG:
+            print("[DEBUG] ⏸️  About to navigate to specific job search URL")
+            print(f"[DEBUG] Search URL: {search_url}")
+            print("[DEBUG] Press Enter to continue...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("[DEBUG] Continuing automatically...")
         
         # Enhanced navigation with retry logic and error handling
         navigation_success = False
@@ -626,12 +716,33 @@ def scrape_jobs_from_search(
 
         #  COLLECT JOB LINKS 
         print("[INFO] Collecting job links...")
+        
+        # Debug pause before job collection
+        if config.DEBUG:
+            print("[DEBUG] ⏸️  About to start collecting job links")
+            print(f"[DEBUG] Max jobs: {max_jobs}")
+            print("[DEBUG] Press Enter to continue...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("[DEBUG] Continuing automatically...")
+        
         job_links = collect_job_links_with_pagination(page, search_url, max_jobs=max_jobs)
         if not job_links:
             print("[WARN] No job links found")
             return []
         
         print(f"[INFO] Found {len(job_links)} job links")
+        
+        # Debug pause after job collection
+        if config.DEBUG:
+            print("[DEBUG] ⏸️  Job collection completed")
+            print(f"[DEBUG] Found {len(job_links)} job links")
+            print("[DEBUG] Press Enter to continue with job processing...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("[DEBUG] Continuing automatically...")
 
         #  LOAD PERSONAL INFO 
         print("[INFO] Loading personal information...")
@@ -658,6 +769,17 @@ def scrape_jobs_from_search(
 
         #  SCRAPE, BUILD & APPLY LOOP 
         jobs_data = []  
+        
+        # Debug pause before starting job processing loop
+        if config.DEBUG:
+            print("[DEBUG] ⏸️  About to start job processing loop")
+            print(f"[DEBUG] Will process {len(job_links)} jobs")
+            print("[DEBUG] Press Enter to continue...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("[DEBUG] Continuing automatically...")
+        
         for idx, job_url in enumerate(job_links, start=1):
             # Check if browser was manually closed
             if browser_monitor.should_exit():
@@ -665,6 +787,16 @@ def scrape_jobs_from_search(
                 break
                 
             print(f"\n[INFO] [{idx}/{len(job_links)}] Opening job page: {job_url}")
+            
+            # Debug pause before each job
+            if config.DEBUG:
+                print(f"[DEBUG] ⏸️  About to process job {idx}/{len(job_links)}")
+                print(f"[DEBUG] Job URL: {job_url}")
+                print("[DEBUG] Press Enter to continue...")
+                try:
+                    input()
+                except (EOFError, KeyboardInterrupt):
+                    print("[DEBUG] Continuing automatically...")
 
             with ErrorContext(f"Processing job {idx}/{len(job_links)}", page) as job_context:
                 job_context.add_context("job_url", job_url)

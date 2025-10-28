@@ -35,18 +35,43 @@ def step_through_easy_apply(job_page: Page) -> bool:
     Steps through the LinkedIn Easy Apply modal, handling resume uploads,
     additional questions, and ensuring we don't accidentally follow companies.
     """
+    # Debug pause before starting Easy Apply steps
+    if config.DEBUG:
+        print("[DEBUG] ⏸️  About to start stepping through Easy Apply modal")
+        print("[DEBUG] Press Enter to continue...")
+        try:
+            input()
+        except (EOFError, KeyboardInterrupt):
+            print("[DEBUG] Continuing automatically...")
+    
     for step in range(1, 8):
         if config.DEBUG:
             print(f"[DEBUG] Step {step}: Checking for buttons and form elements")
+            print(f"[DEBUG] ⏸️  Step {step} - Press Enter to continue...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("[DEBUG] Continuing automatically...")
 
         # [OK] If a resume upload section appears, handle it
         upload_section = job_page.locator(config.LINKEDIN_SELECTORS["resume_upload"]["upload_button"])
         if upload_section.count():
             if config.DEBUG:
                 print(f"[DEBUG] Resume upload section detected at step {step}.")
+                print("[DEBUG] ⏸️  About to handle resume upload - Press Enter to continue...")
+                try:
+                    input()
+                except (EOFError, KeyboardInterrupt):
+                    print("[DEBUG] Continuing automatically...")
             check_and_upload_resume(job_page)
 
         # [OK] Handle Additional Questions (radio, dropdown, etc.)
+        if config.DEBUG:
+            print(f"[DEBUG] ⏸️  Step {step} - About to handle additional questions - Press Enter to continue...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("[DEBUG] Continuing automatically...")
         handle_additional_questions(job_page)
 
         # [OK] Footer buttons
@@ -394,6 +419,17 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
     [OK] Cleans up job_urls.json (removes completed or already-applied jobs)
     """
     print("[ACTION] Starting Easy Apply")
+    
+    # Debug pause before starting Easy Apply
+    if config.DEBUG:
+        print("[DEBUG] ⏸️  About to start Easy Apply process")
+        print(f"[DEBUG] Resume path: {resume_path}")
+        print(f"[DEBUG] Job URL: {job_url}")
+        print("[DEBUG] Press Enter to continue...")
+        try:
+            input()
+        except (EOFError, KeyboardInterrupt):
+            print("[DEBUG] Continuing automatically...")
 
     def remove_from_json(url: str):
         """Removes a job URL from job_urls.json so it doesn't get retried."""
