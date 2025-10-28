@@ -7,10 +7,11 @@ asset rendering and reduce GraphQL-related issues.
 """
 
 import os
+import logging
 from typing import Dict, Any, Optional
-from src.logging_config import get_logger
 
-logger = get_logger(__name__)
+# Use standard logging to avoid circular import
+logger = logging.getLogger(__name__)
 
 class DebugConfig:
     """

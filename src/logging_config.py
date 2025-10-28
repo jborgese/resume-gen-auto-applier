@@ -10,7 +10,7 @@ import sys
 import os
 from typing import Any, Dict, Optional
 from pathlib import Path
-from src.debug_config import should_skip_debug_stops, get_debug_delays, is_debug_mode
+# Removed circular import - will import debug functions locally when needed
 
 
 def configure_structlog(
@@ -203,6 +203,9 @@ def debug_pause(message: str, **context: Any) -> None:
         message: Debug message to log
         **context: Additional context to include in log
     """
+    # Import locally to avoid circular import
+    from src.debug_config import is_debug_mode, should_skip_debug_stops, get_debug_delays
+    
     debug_mode = is_debug_mode()
     if debug_mode:
         logger = get_logger("debug_pause")
@@ -234,7 +237,7 @@ def debug_stop(message: str, **context: Any) -> None:
     debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
     if debug_mode:
         logger = get_logger("debug_stop")
-        logger.debug(f"🔍 DEBUG STOP: {message}", **context)
+        logger.debug(f"[DEBUG STOP] {message}", **context)
         
         # Show additional context if available
         if context:
@@ -242,7 +245,7 @@ def debug_stop(message: str, **context: Any) -> None:
         
         try:
             print("\n" + "="*60)
-            print(f"🔍 DEBUG STOP: {message}")
+            print(f"[DEBUG STOP] {message}")
             print("="*60)
             if context:
                 print("Context:")
@@ -282,7 +285,7 @@ def debug_checkpoint(checkpoint_name: str, **context: Any) -> None:
     debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
     if debug_mode:
         logger = get_logger("debug_checkpoint")
-        logger.debug(f"📍 CHECKPOINT: {checkpoint_name}", **context)
+        logger.debug(f"[CHECKPOINT] {checkpoint_name}", **context)
 
 
 def debug_skip_stops() -> bool:
@@ -293,4 +296,6 @@ def debug_skip_stops() -> bool:
     Returns:
         True if debug stops should be skipped
     """
+    # Import locally to avoid circular import
+    from src.debug_config import should_skip_debug_stops
     return should_skip_debug_stops()
