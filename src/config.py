@@ -9,7 +9,11 @@ while maintaining the same interface for existing code.
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv
 from src.logging_config import get_logger, log_function_call, log_error_context
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import the new configuration system
 from .config_manager import get_config_manager, ConfigManager

@@ -4,7 +4,7 @@ import os
 import re
 from openai import OpenAI
 from src.error_handler import retry_with_backoff, ErrorContext, RetryableError, FatalError
-from src.logging_config import get_logger, log_function_call, log_error_context
+from src.logging_config import get_logger, log_function_call, log_error_context, debug_stop, debug_checkpoint, debug_skip_stops
 
 logger = get_logger(__name__)
 
@@ -74,6 +74,21 @@ def generate_resume_summary(
     Generates a concise, tailored resume summary for a specific job using OpenAI.
     Always returns clean JSON (code fences stripped if GPT adds them).
     """
+    # Debug checkpoint at function start
+    debug_checkpoint("generate_resume_summary_start", 
+                    job_title=job_title,
+                    company=company,
+                    description_length=len(description),
+                    max_tokens=max_tokens)
+    
+    # Debug stop before LLM processing
+    if not debug_skip_stops():
+        debug_stop("About to generate LLM resume summary", 
+                  job_title=job_title,
+                  company=company,
+                  description_length=len(description),
+                  description_preview=description[:200] + "..." if len(description) > 200 else description)
+    
     if not OPENAI_API_KEY or not client:
         logger.warning("[WARN] OPENAI_API_KEY is missing or client not initialized - returning fallback summary")
         return _create_fallback_json(description, job_title, company)
@@ -87,6 +102,11 @@ def generate_resume_summary(
     truncated_description = description[:max_description_length]
     if len(description) > max_description_length:
         logger.warning(f"[WARN] Description truncated from {len(description)} to {max_description_length} characters")
+
+    # Debug checkpoint after input processing
+    debug_checkpoint("input_processing_complete", 
+                    truncated_description_length=len(truncated_description),
+                    was_truncated=len(description) > max_description_length)
 
     # Prompt for GPT model
     prompt = f"""
@@ -112,6 +132,12 @@ def generate_resume_summary(
         context.add_context("description_length", len(description))
         
         try:
+            # Debug checkpoint before API call
+            debug_checkpoint("api_call_start", 
+                           model="gpt-4o-mini",
+                           max_tokens=max_tokens,
+                           temperature=0.7)
+            
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
@@ -124,6 +150,11 @@ def generate_resume_summary(
 
             raw_content = response.choices[0].message.content or ""
             
+            # Debug checkpoint after API call
+            debug_checkpoint("api_call_complete", 
+                           response_length=len(raw_content),
+                           has_content=bool(raw_content.strip()))
+            
             # Check for empty response
             if not raw_content.strip():
                 logger.warning("[WARN] LLM returned empty response")
@@ -131,6 +162,11 @@ def generate_resume_summary(
             else:
                 cleaned_content = raw_content.strip()
                 logger.debug(f"[DEBUG] Raw LLM response length: {len(cleaned_content)} characters")
+
+            # Debug checkpoint before JSON processing
+            debug_checkpoint("json_processing_start", 
+                           cleaned_content_length=len(cleaned_content),
+                           has_code_fences=cleaned_content.startswith("```"))
 
             # [OK] Remove code fences if GPT wraps JSON in ```json ... ```
             if cleaned_content.startswith("```"):
@@ -141,8 +177,15 @@ def generate_resume_summary(
             # [OK] Validate JSON - if bad, try to fix truncated responses
             try:
                 json.loads(cleaned_content)
+                # Debug checkpoint for valid JSON
+                debug_checkpoint("json_validation_success")
             except json.JSONDecodeError as e:
                 logger.warning(f"[WARN] JSON parsing failed: {e}")
+                
+                # Debug checkpoint for JSON error
+                debug_checkpoint("json_validation_failure", 
+                               error=str(e),
+                               content_preview=cleaned_content[:200])
                 
                 # Try to fix truncated JSON by adding missing closing braces
                 if cleaned_content.count('{') > cleaned_content.count('}'):
@@ -154,6 +197,7 @@ def generate_resume_summary(
                     try:
                         json.loads(cleaned_content)
                         logger.info("[OK] Fixed truncated JSON by adding missing braces")
+                        debug_checkpoint("json_fix_success", missing_braces=missing_braces)
                     except json.JSONDecodeError as parse_error:
                         logger.warning(f"[WARN] JSON still invalid after fixing braces: {parse_error}")
                         cleaned_content = _create_fallback_json(cleaned_content, job_title, company)
@@ -165,6 +209,7 @@ def generate_resume_summary(
                 try:
                     json.loads(cleaned_content)
                     logger.info("[OK] Successfully created valid JSON from partial response")
+                    debug_checkpoint("fallback_json_success")
                 except json.JSONDecodeError as final_error:
                     raise ValueError(f"[LLM ERROR] GPT returned invalid JSON that could not be fixed: {cleaned_content[:200]}... Error: {final_error}")
 
@@ -176,6 +221,11 @@ def generate_resume_summary(
                 logger.info(f"[OK] Summary generated successfully for {job_title} at {company}")
                 logger.debug(f"[DEBUG] Summary preview: {summary_preview}")
                 logger.debug(f"[TAG] Keywords: {keywords_preview}")
+                
+                # Debug checkpoint at successful completion
+                debug_checkpoint("llm_summary_success", 
+                               summary_length=len(parsed_result.get("summary", "")),
+                               keywords_count=len(keywords_preview.split(",")) if keywords_preview else 0)
             except:
                 logger.info(f"[OK] Summary generated (raw): {cleaned_content[:200]}...")
             
@@ -183,6 +233,13 @@ def generate_resume_summary(
             return cleaned_content
 
         except Exception as e:
+            # Debug checkpoint at error
+            debug_checkpoint("llm_summary_error", 
+                           error=str(e),
+                           error_type=type(e).__name__,
+                           job_title=job_title,
+                           company=company)
+            
             context.add_context("error", str(e))
             context.add_context("error_type", type(e).__name__)
             

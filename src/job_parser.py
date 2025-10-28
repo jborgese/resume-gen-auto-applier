@@ -1,7 +1,7 @@
 from typing import Union
 import src.config as config
 import time
-from src.logging_config import get_logger, log_function_call, log_error_context
+from src.logging_config import get_logger, log_function_call, log_error_context, debug_stop, debug_checkpoint, debug_skip_stops
 
 logger = get_logger(__name__)
 
@@ -41,6 +41,9 @@ def parse_job_card(li_element) -> dict:
     ✅ Detects 'Applied' status from search list (footer) and fallback banners.
     ✅ Uses try/except on each field to prevent breaks from partial skeletons.
     """
+    # Debug checkpoint at function start
+    debug_checkpoint("parse_job_card_start")
+    
     job = {
         "id": None,
         "url": None,
@@ -158,5 +161,12 @@ def parse_job_card(li_element) -> dict:
                 job["already_applied"] = True
         except:
             logger.warning("Could not check Application submitted banner")
+
+    # Debug checkpoint at function end
+    debug_checkpoint("parse_job_card_complete", 
+                    job_title=job.get("title"),
+                    company=job.get("company"),
+                    already_applied=job.get("already_applied"),
+                    hydrated=job.get("hydrated"))
 
     return job

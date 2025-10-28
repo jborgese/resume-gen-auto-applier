@@ -29,7 +29,7 @@ from src.error_handler import (
 )
 from src.browser_config import EnhancedBrowserConfig
 from src.resource_error_handler import ResourceErrorHandler
-from src.cookie_manager import CookieManager
+# CookieManager removed to prevent automated behavior detection
 import src.config as config
 from src.config import MAX_JOBS
 from typing import Optional
@@ -38,7 +38,7 @@ import json
 import time
 import os
 import sys
-from src.logging_config import get_logger, log_function_call, log_error_context, log_job_context, log_browser_context, debug_pause
+from src.logging_config import get_logger, log_function_call, log_error_context, log_job_context, log_browser_context, debug_pause, debug_stop, debug_checkpoint, debug_skip_stops
 
 logger = get_logger(__name__)
 
@@ -161,6 +161,13 @@ def scrape_jobs_from_search(
     then (if enabled) runs Easy Apply on each job.
     Returns a list of job_data dicts including paths to generated PDFs.
     """
+    # Debug checkpoint at function start
+    debug_checkpoint("scrape_jobs_from_search_start", 
+                    search_url=search_url, 
+                    email=email, 
+                    max_jobs=max_jobs,
+                    personal_info_path=personal_info_path)
+    
     # Use default max if not provided
     if max_jobs is None:
         max_jobs = MAX_JOBS
@@ -173,73 +180,30 @@ def scrape_jobs_from_search(
             headless=config.HEADLESS_MODE
         )
         
+        # Debug stop before browser launch
+        if not debug_skip_stops():
+            debug_stop("About to launch browser", 
+                      debug_mode=config.DEBUG,
+                      headless_mode=config.HEADLESS_MODE,
+                      browser_type="chromium")
+        
         # Launch browser with enhanced configuration
         browser = browser_config.launch_browser(p)
+        
+        # Debug checkpoint after browser launch
+        debug_checkpoint("browser_launched", browser_type="chromium")
         
         # Create context with stealth settings
         context = browser_config.create_context(browser)
         
-        # Initialize cookie manager
-        cookie_manager = CookieManager()
+        # Debug checkpoint after context creation
+        debug_checkpoint("browser_context_created")
+        
+        # Skip cookie usage to prevent automated behavior detection
+        logger.info("Using fresh login approach to avoid automated behavior detection")
+        skip_login = False
         
         page = context.new_page()
-        
-        # Try to load existing cookies for persistent login
-        saved_cookies = cookie_manager.load_cookies()
-        if saved_cookies:
-            logger.info("Found saved LinkedIn cookies - attempting to use existing session")
-            try:
-                # Prepare cookies for Playwright (ensure proper format)
-                prepared_cookies = cookie_manager.prepare_cookies_for_playwright(
-                    saved_cookies, 
-                    url="https://www.linkedin.com"
-                )
-                
-                # Navigate to LinkedIn domain first (required for setting cookies)
-                page.goto("https://www.linkedin.com", timeout=config.TIMEOUTS["login"])
-                time.sleep(1)  # Brief pause for domain to load
-                
-                # Add cookies to context
-                context.add_cookies(prepared_cookies)  # type: ignore
-                logger.info("Loaded cookies into browser context", cookie_count=len(prepared_cookies))
-                
-                # Navigate to feed to verify session
-                page.goto("https://www.linkedin.com/feed/", timeout=config.TIMEOUTS["login"])
-                
-                # Simulate human-like viewing before checking login status
-                HumanBehavior.simulate_hesitation(1.0, 2.0)
-                HumanBehavior.simulate_viewport_movement(page)
-                
-                # Check if we're logged in
-                current_url = page.url
-                page_title = page.title()
-                
-                # Multiple checks for login success
-                login_indicators = [
-                    "/feed" in current_url,
-                    "/in/" in current_url,
-                    "LinkedIn" in page_title and "Feed" in page_title,
-                    "Login" not in page_title and "Sign In" not in page_title
-                ]
-                
-                if any(login_indicators):
-                    logger.info("Successfully logged in using saved cookies - skipping login flow")
-                    # Refresh cookies to update session
-                    cookie_manager.refresh_cookies_if_needed(context, page)
-                    skip_login = True
-                else:
-                    logger.info("Saved cookies appear to be expired or invalid - falling back to login")
-                    # Delete invalid cookies to prevent future issues
-                    cookie_manager.delete_cookies()
-                    skip_login = False
-                    
-            except Exception as e:
-                logger.warning(f"Failed to use saved cookies: {e}")
-                logger.warning("Could not use saved cookies", error=str(e))
-                skip_login = False
-        else:
-            logger.info("No saved cookies found - will perform fresh login")
-            skip_login = False
         
         # Initialize resource error handling
         resource_handler = ResourceErrorHandler(page)
@@ -257,6 +221,13 @@ def scrape_jobs_from_search(
 
         #  LOGIN 
         if not skip_login:
+            # Debug stop before login process
+            if not debug_skip_stops():
+                debug_stop("About to start LinkedIn login process", 
+                          email=email,
+                          search_url=search_url,
+                          skip_login=skip_login)
+            
             with ErrorContext("LinkedIn login", page) as login_context:
                 login_context.add_context("email", email)
                 login_context.add_context("search_url", search_url)
@@ -281,8 +252,9 @@ def scrape_jobs_from_search(
                 
                 logger.info("Entering credentials")
                 
-                # Debug pause before entering credentials
-                debug_pause("About to enter login credentials")
+                # Enhanced human behavior simulation before login
+                HumanBehavior.simulate_enhanced_hesitation(0.5, 1.5)
+                HumanBehavior.simulate_natural_viewport_interaction(page)
                 
                 # Use fallback selectors for login
                 username_success = selector_fallback.safe_fill(
@@ -328,82 +300,94 @@ def scrape_jobs_from_search(
                 
                 # Check if we're on security/checkpoint page
                 if "Security Verification" in page_title or "security" in page_title.lower() or "checkpoint/challenge" in current_url:
-                    logger.info("Security verification page detected - waiting for verification to complete")
+                    logger.info("Security verification page detected")
                     
-                    # Wait for redirect away from security page (LinkedIn may take 30-60 seconds)
+                    # Check if reCAPTCHA is broken (common with automation)
                     try:
-                        logger.info("Waiting for security check to complete", timeout_seconds=60)
-                        page.wait_for_url(
-                            lambda url: "checkpoint" not in url.lower(),
-                            timeout=60000  # Increase timeout to 60 seconds
-                        )
-                        logger.info("Security verification page redirected")
-                        time.sleep(3)  # Give page time to fully load
+                        # Look for reCAPTCHA errors in console logs
+                        page.wait_for_timeout(3000)  # Wait 3 seconds for page to load
                         
-                        # Check where we were redirected to
-                        final_url = page.url
-                        
-                        # If redirected to login, verification failed
-                        if "/login" in final_url or "uas/login" in final_url:
-                            logger.error("LinkedIn redirected to login page after security verification")
-                            logger.error("The security verification likely failed or requires manual completion")
-                            logger.info("Please log in manually through the browser to complete the verification")
-                            logger.info("This usually happens when LinkedIn detects automated login attempts")
-                            raise RetryableError("Security verification failed - redirected to login")
-                        
-                        # If we got to a good page, mark as logged in
-                        if "linkedin.com/feed" in final_url or "linkedin.com/in/" in final_url:
-                            logger.info("Successfully logged in after security verification")
-                            login_detected = True
-                        else:
-                            logger.info("Security verification completed", final_url=final_url)
-                            login_detected = True  # Assume success if not on login page
+                        # Check if we can detect broken reCAPTCHA
+                        page_content = page.content()
+                        if "grecaptcha.render is not a function" in page_content or "recaptcha" in page_content.lower():
+                            logger.warning("reCAPTCHA appears to be broken - this is common with automated browsers")
+                            logger.info("LinkedIn has detected automated behavior and is blocking the security check")
+                            logger.info("Please complete the security verification manually in the browser window")
+                            logger.info("Once you see the LinkedIn feed, press Enter here to continue...")
                             
-                    except PlaywrightTimeout:
-                        # Timeout waiting for redirect - check where we still are
-                        final_url = page.url
-                        logger.warning("Security verification timed out", final_url=final_url)
-                        
-                        # If still on checkpoint page after timeout, ask user to complete manually
-                        if "checkpoint" in final_url.lower():
-                            logger.info("Security verification is taking longer than expected")
-                            logger.info("The browser window is still open - please complete the security check manually")
-                            logger.info("Once you're logged into LinkedIn (you'll see the feed), press Enter here...")
-                            logger.info("The script will then save your session cookies for future automatic logins")
-                            input("Press Enter once you're logged into LinkedIn...")
+                            # Wait for manual completion (with timeout for non-interactive environments)
+                            try:
+                                import sys
+                                if sys.stdin.isatty():
+                                    input("Press Enter once you've completed the security check and are logged into LinkedIn...")
+                                else:
+                                    logger.info("Non-interactive environment detected - waiting 30 seconds for manual completion")
+                                    time.sleep(30)
+                            except (EOFError, KeyboardInterrupt):
+                                logger.info("Manual intervention cancelled or timed out")
+                                raise RetryableError("Manual security verification cancelled")
                             
-                            # Check if user successfully logged in
-                            time.sleep(2)  # Give page a moment to update
+                            # Verify manual login success
+                            time.sleep(2)
                             final_url = page.url
-                            if "/feed" in final_url or "/in/" in final_url or "linkedin.com" in final_url:
-                                logger.info("Successfully logged in manually")
+                            final_title = page.title()
+                            
+                            if "/feed" in final_url or "/in/" in final_url or ("LinkedIn" in final_title and "Feed" in final_title):
+                                logger.info("Manual security verification completed successfully")
                                 login_detected = True
                             else:
-                                logger.error("Still not logged in. Please try again.")
-                                raise RetryableError("Manual login completion failed")
+                                logger.error("Still not logged in after manual verification")
+                                raise RetryableError("Manual security verification failed")
                         else:
-                            # Check if we got redirected somewhere else
-                            if "/login" in final_url or "uas/login" in final_url:
-                                logger.error("LinkedIn redirected to login after security verification timeout")
-                                raise RetryableError("Security verification timeout - redirected to login")
-                            else:
-                                # Unexpected state - but assume we might be logged in
-                                logger.info("Security verification timed out but on unexpected page", final_url=final_url)
-                                login_detected = True  # Optimistically assume success
+                            # Try automatic waiting (original logic)
+                            logger.info("Waiting for automatic security check to complete")
+                            # Handle automatic security verification
+                            try:
+                                logger.info("Waiting for automatic security check to complete", timeout_seconds=30)
+                                page.wait_for_url(
+                                    lambda url: "checkpoint" not in url.lower(),
+                                    timeout=30000  # 30 seconds timeout
+                                )
+                                logger.info("Security verification page redirected")
+                                time.sleep(3)  # Give page time to fully load
+                                
+                                # Check where we were redirected to
+                                final_url = page.url
+                                
+                                # If redirected to login, verification failed
+                                if "/login" in final_url or "uas/login" in final_url:
+                                    logger.error("LinkedIn redirected to login page after security verification")
+                                    raise RetryableError("Security verification failed - redirected to login")
+                                else:
+                                    logger.info("Security verification completed successfully")
+                                    login_detected = True
+                            except Exception as e:
+                                logger.error("Automatic security verification failed", error=str(e))
+                                raise RetryableError("Security verification failed")
                             
                     except Exception as e:
-                        logger.warning("Security verification wait error", error=str(e))
-                        # Check where we ended up after the error
+                        logger.warning("Error during security verification detection", error=str(e))
+                        # Fall back to manual intervention (with timeout for non-interactive environments)
+                        logger.info("Security verification failed - switching to manual mode")
+                        logger.info("Please complete the security check manually in the browser window")
+                        try:
+                            import sys
+                            if sys.stdin.isatty():
+                                input("Press Enter once you're logged into LinkedIn...")
+                            else:
+                                logger.info("Non-interactive environment detected - waiting 30 seconds for manual completion")
+                                time.sleep(30)
+                        except (EOFError, KeyboardInterrupt):
+                            logger.info("Manual intervention cancelled or timed out")
+                            raise RetryableError("Manual security verification cancelled")
+                        
+                        time.sleep(2)
                         final_url = page.url
-                        if "/login" in final_url or "uas/login" in final_url:
-                            logger.error("Error during security verification - redirected to login")
-                            raise RetryableError("Security verification error - redirected to login")
-                        elif "checkpoint" in final_url.lower():
-                            logger.error("Security verification error - still on checkpoint page")
-                            raise RetryableError("Security verification error - check required")
+                        if "/feed" in final_url or "/in/" in final_url:
+                            logger.info("Manual security verification completed")
+                            login_detected = True
                         else:
-                            logger.info("Security verification error but on unexpected page", final_url=final_url)
-                            login_detected = True  # Assume success
+                            raise RetryableError("Security verification failed")
                 
                 # Method 1: Check URL - if we're redirected away from login page, likely successful
                 current_url = page.url
@@ -478,34 +462,31 @@ def scrape_jobs_from_search(
                 logger.error(f"Unexpected error during login: {e}")
                 raise RetryableError(f"Unexpected login error: {e}")
             
-            # Save cookies after successful login
+            # Session established - no cookie saving to avoid detection
             if login_detected:
-                try:
-                    # Wait a moment for all cookies to be set
-                    time.sleep(2)
-                    
-                    cookies = context.cookies()
-                    # Convert to dict if needed
-                    cookies_dict = [dict(c) for c in cookies]
-                    
-                    # Filter to only LinkedIn cookies for security
-                    linkedin_cookies = [
-                        c for c in cookies_dict 
-                        if 'linkedin.com' in c.get('domain', '') or 'linkedin.com' in c.get('url', '')
-                    ]
-                    
-                    if linkedin_cookies:
-                        cookie_manager.save_cookies(linkedin_cookies)
-                        logger.info("Saved LinkedIn session cookies", cookie_count=len(linkedin_cookies))
-                    else:
-                        logger.warning("No LinkedIn cookies found to save")
-                        
-                except Exception as e:
-                    logger.warning(f"Failed to save cookies: {e}")
-                    logger.warning("Could not save cookies for future sessions", error=str(e))
+                # Wait for session to be fully established
+                logger.info("Waiting for LinkedIn session to be fully established...")
+                time.sleep(5)
+                
+                # Verify we're still logged in before proceeding
+                current_url = page.url
+                page_title = page.title()
+                
+                # Check if we're still on a valid LinkedIn page (not redirected to login)
+                if "/login" in current_url or "Sign In" in page_title:
+                    logger.warning("Session appears invalid after login - may need to retry")
+                    raise RetryableError("Session validation failed after login")
+                
+                logger.info("Session validated successfully - proceeding with job search")
 
         #  GO TO JOBS PAGE FIRST (like before)
         logger.info("Navigating to LinkedIn Jobs page initially")
+        
+        # Debug stop before jobs page navigation
+        if not debug_skip_stops():
+            debug_stop("About to navigate to LinkedIn Jobs page", 
+                      current_url=page.url,
+                      page_title=page.title())
         
         # Debug pause before navigation
         debug_pause("About to navigate to LinkedIn Jobs page")
@@ -527,6 +508,12 @@ def scrape_jobs_from_search(
         #  GO TO SEARCH PAGE 
         logger.info("Navigating to job search URL", search_url=search_url)
         
+        # Debug stop before search page navigation
+        if not debug_skip_stops():
+            debug_stop("About to navigate to specific job search URL", 
+                      search_url=search_url,
+                      current_url=page.url)
+        
         # Debug pause before search navigation
         debug_pause("About to navigate to specific job search URL", search_url=search_url)
         
@@ -538,11 +525,9 @@ def scrape_jobs_from_search(
             try:
                 logger.info("Navigation attempt", attempt=attempt + 1, max_attempts=max_navigation_attempts)
                 
-                # Add random delay to avoid rate limiting
-                if attempt > 0:
-                    delay = 2 + (attempt * 2)  # 2s, 4s, 6s delays
-                    logger.info("Waiting before retry", delay=delay)
-                    time.sleep(delay)
+                # Add randomized delays to avoid detection
+                HumanBehavior.simulate_enhanced_hesitation(1.0, 3.0)
+                HumanBehavior.simulate_natural_viewport_interaction(page)
                 
                 # Try to navigate to the search page
                 page.goto(search_url, timeout=config.TIMEOUTS["search_page"], wait_until="domcontentloaded")
@@ -652,6 +637,13 @@ def scrape_jobs_from_search(
         #  COLLECT JOB LINKS 
         logger.info("Collecting job links")
         
+        # Debug stop before job collection
+        if not debug_skip_stops():
+            debug_stop("About to start collecting job links", 
+                      max_jobs=max_jobs,
+                      search_url=search_url,
+                      current_url=page.url)
+        
         # Debug pause before job collection
         # Debug pause before collecting job links
         debug_pause("About to start collecting job links", max_jobs=max_jobs)
@@ -692,6 +684,13 @@ def scrape_jobs_from_search(
 
         #  SCRAPE, BUILD & APPLY LOOP 
         jobs_data = []  
+        
+        # Debug stop before job processing loop
+        if not debug_skip_stops():
+            debug_stop("About to start job processing loop", 
+                      job_count=len(job_links),
+                      max_jobs=max_jobs,
+                      auto_apply=config.AUTO_APPLY)
         
         # Debug pause before starting job processing loop
         # Debug pause before job processing loop
@@ -804,7 +803,7 @@ def scrape_jobs_from_search(
                     
                     # Simulate human viewing the page
                     HumanBehavior.simulate_viewport_movement(job_page)
-                    HumanBehavior.simulate_hesitation(0.5, 1.2)  # Pause to "read" job title
+                    HumanBehavior.simulate_enhanced_hesitation(0.5, 1.2)  # Pause to "read" job title
                     
                     # Enhanced GraphQL failure detection and handling
                     if config.DEBUG:
@@ -873,7 +872,10 @@ def scrape_jobs_from_search(
                         # Try to recover session by refreshing cookies
                         logger.info("Attempting session recovery")
                         try:
-                            cookie_refreshed = cookie_manager.refresh_cookies_if_needed(context, job_page)
+                            # Cookie manager removed to prevent automated behavior detection
+                            # Skip cookie refresh and continue with manual intervention
+                            logger.info("Skipping cookie refresh to avoid automated behavior detection")
+                            cookie_refreshed = False
                             if cookie_refreshed:
                                 logger.info("Session cookies refreshed - retrying job page")
                                 # Close current page and retry
@@ -1045,8 +1047,23 @@ def scrape_jobs_from_search(
                     extracted = [kw for kw, _ in weighted]
                     print(f"  [INFO] Extracted {len(extracted)} keywords.")
 
+                    # Debug checkpoint after keyword extraction
+                    debug_checkpoint("keywords_extracted", 
+                                   job_title=title,
+                                   company=company,
+                                   keyword_count=len(extracted),
+                                   keywords=extracted[:10])  # First 10 keywords
+
                     # [OK] LLM summary + skills with error handling
                     try:
+                        # Debug stop before LLM processing
+                        if not debug_skip_stops():
+                            debug_stop("About to generate LLM summary", 
+                                      job_title=title,
+                                      company=company,
+                                      description_length=len(desc),
+                                      extracted_keywords=extracted[:5])
+                        
                         from src.error_handler import APIFailureHandler
                         raw_summary = APIFailureHandler.handle_openai_failure(
                             generate_resume_summary, title, company, desc
@@ -1109,6 +1126,14 @@ def scrape_jobs_from_search(
 
                     # [OK] Generate tailored resume PDF with error handling
                     try:
+                        # Debug stop before resume building
+                        if not debug_skip_stops():
+                            debug_stop("About to build resume PDF", 
+                                      job_title=title,
+                                      company=company,
+                                      summary_length=len(summary_text),
+                                      skills_count=len(llm_skills or extracted))
+                        
                         from src.error_handler import APIFailureHandler
                         pdf_path = build_resume(payload)
                         
@@ -1145,6 +1170,14 @@ def scrape_jobs_from_search(
                     apply_status = "skipped"
                     apply_error = None
                     if config.AUTO_APPLY:
+                        # Debug stop before Easy Apply
+                        if not debug_skip_stops():
+                            debug_stop("About to attempt LinkedIn Easy Apply", 
+                                      job_title=title,
+                                      company=company,
+                                      pdf_path=pdf_path,
+                                      job_url=job_url)
+                        
                         if config.DEBUG:
                             print("\n[DEBUG] About to attempt LinkedIn Easy Apply...")
                         logger.info("Attempting LinkedIn Easy Apply")
@@ -1226,4 +1259,44 @@ def scrape_jobs_from_search(
         # Cleanup browser configuration
         browser_config.cleanup()
         
+        # Debug checkpoint at function end
+        debug_checkpoint("scrape_jobs_from_search_complete", 
+                        jobs_processed=len(jobs_data),
+                        total_jobs_found=len(job_links))
+        
         return jobs_data
+    
+    def _handle_automatic_security_verification(self, page):
+        """Handle automatic security verification waiting."""
+        try:
+            logger.info("Waiting for automatic security check to complete", timeout_seconds=30)
+            page.wait_for_url(
+                lambda url: "checkpoint" not in url.lower(),
+                timeout=30000  # 30 seconds timeout
+            )
+            logger.info("Security verification page redirected")
+            time.sleep(3)  # Give page time to fully load
+            
+            # Check where we were redirected to
+            final_url = page.url
+            
+            # If redirected to login, verification failed
+            if "/login" in final_url or "uas/login" in final_url:
+                logger.error("LinkedIn redirected to login page after security verification")
+                raise RetryableError("Security verification failed - redirected to login")
+            
+            # If we got to a good page, mark as logged in
+            if "linkedin.com/feed" in final_url or "linkedin.com/in/" in final_url:
+                logger.info("Successfully logged in after automatic security verification")
+            else:
+                logger.info("Security verification completed", final_url=final_url)
+                
+        except PlaywrightTimeout:
+            # Timeout waiting for redirect - fall back to manual
+            final_url = page.url
+            logger.warning("Automatic security verification timed out", final_url=final_url)
+            raise RetryableError("Automatic security verification timeout")
+            
+        except Exception as e:
+            logger.warning("Automatic security verification error", error=str(e))
+            raise RetryableError(f"Security verification error: {e}")

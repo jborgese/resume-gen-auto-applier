@@ -177,8 +177,14 @@ class CookieManager:
             # Normalize domain to ensure proper matching
             domain = prepared_cookie['domain']
             if domain.startswith('.'):
-                # Use www subdomain for LinkedIn
-                prepared_cookie['url'] = f"https://www{domain[1:]}/"
+                # Handle different LinkedIn domain patterns
+                if domain == '.linkedin.com':
+                    prepared_cookie['url'] = "https://www.linkedin.com/"
+                elif domain == '.www.linkedin.com':
+                    prepared_cookie['url'] = "https://www.linkedin.com/"
+                else:
+                    # Generic fallback for other subdomains
+                    prepared_cookie['url'] = f"https://www{domain[1:]}/"
             else:
                 prepared_cookie['url'] = f"https://{domain}/"
             

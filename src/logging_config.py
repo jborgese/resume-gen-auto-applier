@@ -10,6 +10,7 @@ import sys
 import os
 from typing import Any, Dict, Optional
 from pathlib import Path
+from src.debug_config import should_skip_debug_stops, get_debug_delays, is_debug_mode
 
 
 def configure_structlog(
@@ -202,11 +203,94 @@ def debug_pause(message: str, **context: Any) -> None:
         message: Debug message to log
         **context: Additional context to include in log
     """
-    debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
+    debug_mode = is_debug_mode()
     if debug_mode:
         logger = get_logger("debug_pause")
         logger.debug(message, **context)
+        
+        # Use debug delays if REDUCE_DEBUG_PAUSES is enabled
+        if should_skip_debug_stops():
+            debug_delays = get_debug_delays()
+            pause_delay = debug_delays.get('human_behavior', 0.5)
+            logger.debug(f"Debug pause reduced to {pause_delay}s (REDUCE_DEBUG_PAUSES enabled)")
+            import time
+            time.sleep(pause_delay)
+        else:
+            try:
+                input("Press Enter to continue...")
+            except (EOFError, KeyboardInterrupt):
+                logger.debug("Continuing automatically...")
+
+
+def debug_stop(message: str, **context: Any) -> None:
+    """
+    Comprehensive debug stop with enhanced context and options.
+    Only stops if DEBUG mode is enabled.
+    
+    Args:
+        message: Debug message to log
+        **context: Additional context to include in log
+    """
+    debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
+    if debug_mode:
+        logger = get_logger("debug_stop")
+        logger.debug(f"🔍 DEBUG STOP: {message}", **context)
+        
+        # Show additional context if available
+        if context:
+            logger.debug("Context:", **context)
+        
         try:
-            input("Press Enter to continue...")
+            print("\n" + "="*60)
+            print(f"🔍 DEBUG STOP: {message}")
+            print("="*60)
+            if context:
+                print("Context:")
+                for key, value in context.items():
+                    print(f"  {key}: {value}")
+            print("\nOptions:")
+            print("  [Enter] - Continue")
+            print("  [q] - Quit program")
+            print("  [s] - Skip remaining debug stops")
+            print("="*60)
+            
+            choice = input("Choice: ").strip().lower()
+            
+            if choice == 'q':
+                logger.debug("User chose to quit program")
+                import sys
+                sys.exit(0)
+            elif choice == 's':
+                logger.debug("User chose to skip remaining debug stops")
+                os.environ['SKIP_DEBUG_STOPS'] = 'true'
+            else:
+                logger.debug("User chose to continue")
+                
         except (EOFError, KeyboardInterrupt):
             logger.debug("Continuing automatically...")
+
+
+def debug_checkpoint(checkpoint_name: str, **context: Any) -> None:
+    """
+    Debug checkpoint for tracking execution flow.
+    Only logs if DEBUG mode is enabled.
+    
+    Args:
+        checkpoint_name: Name of the checkpoint
+        **context: Additional context to include in log
+    """
+    debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
+    if debug_mode:
+        logger = get_logger("debug_checkpoint")
+        logger.debug(f"📍 CHECKPOINT: {checkpoint_name}", **context)
+
+
+def debug_skip_stops() -> bool:
+    """
+    Check if debug stops should be skipped.
+    Uses debug configuration for consistent behavior.
+    
+    Returns:
+        True if debug stops should be skipped
+    """
+    return should_skip_debug_stops()

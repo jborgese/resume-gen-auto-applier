@@ -7,8 +7,12 @@ This module provides a centralized way to load, validate, and access configurati
 
 from typing import Optional, Dict, Any
 from pathlib import Path
+from dotenv import load_dotenv
 from src.logging_config import get_logger, log_function_call, log_error_context
 from .config_schemas import AppConfig, AppSettings, PersonalInfo, KeywordWeights
+
+# Load environment variables from .env file
+load_dotenv()
 
 logger = get_logger(__name__)
 

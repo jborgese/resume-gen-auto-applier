@@ -1,7 +1,7 @@
 import random, time, json, os
 from src.job_parser import parse_job_card, wait_for_job_cards_to_hydrate
 from src.shared_utils import FileHandler, TextProcessor, DelayManager
-from src.logging_config import get_logger, log_function_call, log_error_context
+from src.logging_config import get_logger, log_function_call, log_error_context, debug_stop, debug_checkpoint, debug_skip_stops
 import src.config as config
 
 logger = get_logger(__name__)
@@ -194,6 +194,111 @@ def scroll_job_list_human_like(page, max_passes: int = 12, pause_between: float 
 from typing import Optional
 
 def collect_job_links_with_pagination(page, base_url: str, max_jobs: Optional[int] = None, start_fresh: bool = False) -> list:
+    """
+    Collect job links with pagination support and human-like scrolling.
+    Returns a list of job URLs.
+    """
+    # Debug checkpoint at function start
+    debug_checkpoint("collect_job_links_start", 
+                    base_url=base_url,
+                    max_jobs=max_jobs,
+                    start_fresh=start_fresh)
+    
+    # Debug stop before job collection
+    if not debug_skip_stops():
+        debug_stop("About to collect job links with pagination", 
+                  base_url=base_url,
+                  max_jobs=max_jobs,
+                  start_fresh=start_fresh)
+    
+    from typing import Optional
+    
+    logger.info("Starting job link collection", base_url=base_url, max_jobs=max_jobs)
+    
+    # Load existing job links if not starting fresh
+    existing_links = set()
+    if not start_fresh:
+        existing_links = load_existing_job_links()
+        logger.info("Loaded existing job links", count=len(existing_links))
+    
+    # Debug checkpoint after loading existing links
+    debug_checkpoint("existing_links_loaded", 
+                    existing_count=len(existing_links))
+    
+    all_job_links = list(existing_links)
+    
+    # Navigate to the job search page
+    try:
+        page.goto(base_url, timeout=config.TIMEOUTS["search_page"])
+        logger.info("Navigated to job search page", url=base_url)
+        
+        # Debug checkpoint after navigation
+        debug_checkpoint("navigation_complete", 
+                        current_url=page.url)
+        
+        # Wait for job cards to load
+        wait_for_job_cards_to_hydrate(page)
+        
+        # Debug checkpoint after job cards loaded
+        debug_checkpoint("job_cards_loaded")
+        
+    except Exception as e:
+        logger.error("Failed to navigate to job search page", error=str(e))
+        return all_job_links
+    
+    # Human-like scrolling to load more jobs
+    scroll_job_list_human_like(page)
+    
+    # Debug checkpoint after scrolling
+    debug_checkpoint("scrolling_complete")
+    
+    # Collect job links from current page
+    job_cards = page.locator(config.LINKEDIN_SELECTORS["job_search"]["job_cards"])
+    total_cards = job_cards.count()
+    
+    logger.info("Found job cards", count=total_cards)
+    
+    # Debug checkpoint before parsing job cards
+    debug_checkpoint("parsing_job_cards_start", 
+                    total_cards=total_cards)
+    
+    new_links_count = 0
+    for i in range(total_cards):
+        try:
+            job_card = job_cards.nth(i)
+            job_data = parse_job_card(job_card)
+            
+            if job_data and job_data.get("url"):
+                job_url = job_data["url"]
+                if job_url not in existing_links:
+                    all_job_links.append(job_url)
+                    new_links_count += 1
+                    
+                    # Check if we've reached max_jobs limit
+                    if max_jobs and len(all_job_links) >= max_jobs:
+                        logger.info("Reached maximum jobs limit", max_jobs=max_jobs)
+                        break
+                        
+        except Exception as e:
+            logger.warning("Failed to parse job card", index=i, error=str(e))
+            continue
+    
+    # Debug checkpoint after parsing
+    debug_checkpoint("job_cards_parsed", 
+                    new_links_found=new_links_count,
+                    total_links=len(all_job_links))
+    
+    # Save updated job links
+    if new_links_count > 0:
+        save_job_links(all_job_links)
+        logger.info("Saved job links", total_count=len(all_job_links), new_count=new_links_count)
+    
+    # Debug checkpoint at function end
+    debug_checkpoint("collect_job_links_complete", 
+                    total_links=len(all_job_links),
+                    new_links=new_links_count)
+    
+    return all_job_links
     """
     Collects job posting URLs by walking through LinkedIn job search pagination.
     [OK] Skips jobs already marked 'Applied' in the job list itself

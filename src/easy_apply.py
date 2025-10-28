@@ -7,7 +7,7 @@ from playwright.sync_api import Page
 import yaml
 import os
 from src.human_behavior import HumanBehavior
-from src.logging_config import get_logger, log_function_call, log_error_context, debug_pause as structlog_debug_pause
+from src.logging_config import get_logger, log_function_call, log_error_context, debug_pause as structlog_debug_pause, debug_stop, debug_checkpoint, debug_skip_stops
 
 logger = get_logger(__name__)
 
@@ -31,10 +31,23 @@ def step_through_easy_apply(job_page: Page) -> bool:
     Steps through the LinkedIn Easy Apply modal, handling resume uploads,
     additional questions, and ensuring we don't accidentally follow companies.
     """
+    # Debug checkpoint at function start
+    debug_checkpoint("step_through_easy_apply_start", 
+                    current_url=job_page.url,
+                    page_title=job_page.title())
+    
+    # Debug stop before starting Easy Apply steps
+    if not debug_skip_stops():
+        debug_stop("About to start stepping through Easy Apply modal", 
+                  current_url=job_page.url)
+    
     # Debug pause before starting Easy Apply steps
     debug_pause("About to start stepping through Easy Apply modal")
     
     for step in range(1, 8):
+        # Debug checkpoint for each step
+        debug_checkpoint(f"easy_apply_step_{step}", step=step)
+        
         # Debug pause for each step
         debug_pause("Checking for buttons and form elements", step=step)
 
@@ -394,7 +407,20 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
     - Saves answers to YAML for re-use
     [OK] Cleans up job_urls.json (removes completed or already-applied jobs)
     """
+    # Debug checkpoint at function start
+    debug_checkpoint("apply_to_job_start", 
+                    resume_path=resume_path,
+                    job_url=job_url,
+                    current_url=job_page.url)
+    
     logger.info("Starting Easy Apply")
+    
+    # Debug stop before starting Easy Apply
+    if not debug_skip_stops():
+        debug_stop("About to start Easy Apply process", 
+                  resume_path=resume_path, 
+                  job_url=job_url,
+                  current_url=job_page.url)
     
     # Debug pause before starting Easy Apply
     if config.DEBUG:
@@ -445,6 +471,11 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         easy_apply_button = None
         button_selectors = config.LINKEDIN_SELECTORS["easy_apply"]["button"]
         
+        # Debug checkpoint before finding Easy Apply button
+        debug_checkpoint("finding_easy_apply_button", 
+                        button_selectors=button_selectors,
+                        current_url=job_page.url)
+        
         # Try each selector until we find one that works
         for selector in button_selectors if isinstance(button_selectors, list) else [button_selectors]:
             try:
@@ -461,6 +492,12 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
             remove_from_json(job_url)
             return False
 
+        # Debug stop before clicking Easy Apply button
+        if not debug_skip_stops():
+            debug_stop("About to click Easy Apply button", 
+                      button_found=True,
+                      current_url=job_page.url)
+        
         # Human-like interaction with Easy Apply button
         easy_apply_button.scroll_into_view_if_needed()
         HumanBehavior.simulate_hesitation(0.3, 0.8)  # Pause to "read" button
@@ -513,7 +550,18 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
         # [OK] Iterate through modal steps
         step_counter = 1
         max_steps = config.RETRY_CONFIG["max_steps"]  # Safeguard against infinite loops
+        
+        # Debug checkpoint before step iteration
+        debug_checkpoint("starting_step_iteration", 
+                        max_steps=max_steps,
+                        current_url=job_page.url)
+        
         while step_counter <= max_steps:
+            # Debug checkpoint for each step
+            debug_checkpoint(f"processing_step_{step_counter}", 
+                           step=step_counter, 
+                           max_steps=max_steps)
+            
             if config.DEBUG:
                 logger.debug("Step processing", step=step_counter, max_steps=max_steps)
 
@@ -722,9 +770,20 @@ def apply_to_job(job_page: Page, resume_path: str, job_url: str) -> bool:
                 logger.debug("No dismiss button found with any selector")
         except Exception as e:
             print(f"[WARN] [WARN] Could not dismiss modal: {e}")
+        # Debug checkpoint at successful completion
+        debug_checkpoint("apply_to_job_success", 
+                        success=success,
+                        job_url=job_url)
+        
         return success
 
     except Exception as e:
+        # Debug checkpoint at error
+        debug_checkpoint("apply_to_job_error", 
+                        error=str(e),
+                        job_url=job_url,
+                        current_url=job_page.url)
+        
         logger.error("Easy Apply failed", error=str(e))
         
         # Debug mode: Add stop for inspection

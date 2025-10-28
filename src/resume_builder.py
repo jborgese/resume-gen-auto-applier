@@ -1,7 +1,7 @@
 from pathlib import Path
 import re
 import time
-from src.logging_config import get_logger, log_function_call, log_error_context
+from src.logging_config import get_logger, log_function_call, log_error_context, debug_stop, debug_checkpoint, debug_skip_stops
 
 # Suppress GLib-GIO warnings before importing WeasyPrint
 from src.glib_suppression import suppress_glib_warnings
@@ -24,6 +24,21 @@ def build_resume(data: dict) -> str:
     :param data: dict containing resume details
     :return: path to generated PDF
     """
+    # Debug checkpoint at function start
+    debug_checkpoint("build_resume_start", 
+                    job_title=data.get("title", "N/A"),
+                    company=data.get("company", "N/A"),
+                    name=data.get("name", "Unknown"))
+    
+    # Debug stop before resume building
+    if not debug_skip_stops():
+        debug_stop("About to build resume PDF", 
+                  job_title=data.get("title", "N/A"),
+                  company=data.get("company", "N/A"),
+                  name=data.get("name", "Unknown"),
+                  skills_count=len(data.get("skills", [])),
+                  experiences_count=len(data.get("experiences", [])))
+    
     with ErrorContext("Resume generation", None) as context:
         context.add_context("job_title", data.get("title", "N/A"))
         context.add_context("company", data.get("company", "N/A"))
@@ -52,6 +67,12 @@ def build_resume(data: dict) -> str:
                 company=data.get("company", "N/A"),
             )
 
+            # Debug checkpoint after template rendering
+            debug_checkpoint("template_rendered", 
+                           html_length=len(html_content),
+                           job_title=data.get("title", "N/A"),
+                           company=data.get("company", "N/A"))
+
             # ✅ Sanitize job title & company for filename
             safe_title = sanitize_filename(data.get("title", "Job"))
             safe_company = sanitize_filename(data.get("company", "Company"))
@@ -64,6 +85,11 @@ def build_resume(data: dict) -> str:
             output_path = Path(f"output/resumes/{last_name}_{safe_title}_{safe_company}.pdf")
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
+            # Debug checkpoint before PDF generation
+            debug_checkpoint("pdf_generation_start", 
+                           output_path=str(output_path),
+                           html_length=len(html_content))
+
             # ✅ Generate PDF with error handling and UTF-8 encoding
             try:
                 # Ensure HTML content is properly encoded as UTF-8
@@ -73,9 +99,20 @@ def build_resume(data: dict) -> str:
                 HTML(string=html_content).write_pdf(str(output_path))
                 context.add_context("success", True)
                 context.add_context("output_path", str(output_path))
+                
+                # Debug checkpoint after successful PDF generation
+                debug_checkpoint("pdf_generation_success", 
+                               output_path=str(output_path),
+                               file_size=output_path.stat().st_size if output_path.exists() else 0)
+                
             except Exception as e:
                 logger.error(f"❌ WeasyPrint PDF generation failed: {e}")
                 context.add_context("error", f"WeasyPrint failed: {e}")
+                
+                # Debug checkpoint for PDF generation failure
+                debug_checkpoint("pdf_generation_failure", 
+                               error=str(e),
+                               output_path=str(output_path))
                 
                 # Try fallback PDF generation
                 fallback_success = APIFailureHandler.handle_weasyprint_failure(html_content, str(output_path))
@@ -85,9 +122,23 @@ def build_resume(data: dict) -> str:
                     logger.info("✅ Fallback PDF generation succeeded")
 
             logger.info("Resume generated", output_path=str(output_path))
+            
+            # Debug checkpoint at successful completion
+            debug_checkpoint("build_resume_success", 
+                           output_path=str(output_path),
+                           job_title=data.get("title", "N/A"),
+                           company=data.get("company", "N/A"))
+            
             return str(output_path)
             
         except Exception as e:
+            # Debug checkpoint at error
+            debug_checkpoint("build_resume_error", 
+                           error=str(e),
+                           error_type=type(e).__name__,
+                           job_title=data.get("title", "N/A"),
+                           company=data.get("company", "N/A"))
+            
             context.add_context("error", str(e))
             context.add_context("error_type", type(e).__name__)
             
