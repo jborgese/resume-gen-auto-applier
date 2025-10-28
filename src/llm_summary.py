@@ -11,8 +11,16 @@ logger = logging.getLogger(__name__)
 # [OK] Load API key from environment (set in .env)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# [OK] Initialize client once
-client = OpenAI(api_key=OPENAI_API_KEY)
+# [OK] Initialize client once (only if API key is available)
+client = None
+if OPENAI_API_KEY:
+    try:
+        client = OpenAI(api_key=OPENAI_API_KEY)
+    except Exception as e:
+        logger.warning(f"Failed to initialize OpenAI client: {e}")
+        client = None
+else:
+    logger.warning("OPENAI_API_KEY not found in environment variables")
 
 def _create_fallback_json(content: str, job_title: str, company: str) -> str:
     """
@@ -66,8 +74,9 @@ def generate_resume_summary(
     Generates a concise, tailored resume summary for a specific job using OpenAI.
     Always returns clean JSON (code fences stripped if GPT adds them).
     """
-    if not OPENAI_API_KEY:
-        raise FatalError("[ERROR] OPENAI_API_KEY is missing - add it to your .env file.")
+    if not OPENAI_API_KEY or not client:
+        logger.warning("[WARN] OPENAI_API_KEY is missing or client not initialized - returning fallback summary")
+        return _create_fallback_json(description, job_title, company)
 
     # Input validation
     if not job_title or not company or not description:
