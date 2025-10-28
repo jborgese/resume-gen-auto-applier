@@ -142,14 +142,14 @@ def sample_job_description():
 
 
 @pytest.fixture
-def sample_job_data():
+def sample_job_data(sample_job_description):
     """Provide sample job data for testing."""
     return {
         "title": "Senior Software Engineer",
         "company": "Tech Corp",
         "location": "San Francisco, CA",
         "url": "https://linkedin.com/jobs/view/123456789",
-        "description": sample_job_description(),
+        "description": sample_job_description,
         "keywords": ["Python", "React", "AWS", "Docker", "Kubernetes", "SQL"],
         "matched_keywords": ["Python", "React", "AWS", "Docker"]
     }
@@ -268,8 +268,8 @@ def sample_resume_payload():
             {
                 "degree": "Bachelor of Science",
                 "field": "Computer Science",
-                "school": "University of Technology",
-                "year": "2018"
+                "institution": "University of Technology",
+                "graduation_date": "2018"
             }
         ],
         "references": [
@@ -277,7 +277,10 @@ def sample_resume_payload():
                 "name": "Jane Smith",
                 "title": "Engineering Manager",
                 "company": "Tech Corp",
-                "email": "jane.smith@techcorp.com"
+                "contact": {
+                    "email": "jane.smith@techcorp.com",
+                    "phone": "+1-555-987-6543"
+                }
             }
         ],
         "title": "Senior Software Engineer",
@@ -374,7 +377,9 @@ def sample_stopwords():
     return {
         "stopwords": [
             "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
-            "of", "with", "by", "from", "up", "about", "into", "through", "during"
+            "of", "with", "by", "from", "up", "about", "into", "through", "during",
+            "communication", "collaboration", "problem-solving", "leadership",
+            "abilities", "skills", "experience", "knowledge", "team", "work"
         ]
     }
 

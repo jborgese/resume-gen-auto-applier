@@ -18,6 +18,10 @@ weasyprint==62.2   # For PDF generation (requires GTK libraries on Windows)
 # Environment variables
 python-dotenv==1.0.1
 
+# Type-safe configuration
+pydantic==2.11.9
+pydantic-settings==2.6.1
+
 # Utilities
 requests==2.32.3
 beautifulsoup4==4.12.3
@@ -26,6 +30,10 @@ pandas==2.2.2
 # Dev tools (optional but recommended)
 black==24.4.2
 isort==5.13.2
+
+# Configuration management
+pydantic==2.9.2
+pydantic-settings==2.6.1
 
 # Testing dependencies
 pytest==8.4.2

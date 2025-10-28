@@ -64,15 +64,15 @@ SAMPLE_PERSONAL_INFO = {
         {
             "degree": "Bachelor of Science",
             "field": "Computer Science",
-            "school": "University of Technology",
-            "year": "2016",
+            "institution": "University of Technology",
+            "graduation_date": "2016",
             "gpa": "3.8"
         },
         {
             "degree": "Master of Science",
             "field": "Software Engineering",
-            "school": "Tech Institute",
-            "year": "2018",
+            "institution": "Tech Institute",
+            "graduation_date": "2018",
             "gpa": "3.9"
         }
     ],
@@ -81,15 +81,19 @@ SAMPLE_PERSONAL_INFO = {
             "name": "Jane Smith",
             "title": "Engineering Manager",
             "company": "Tech Corp",
-            "email": "jane.smith@techcorp.com",
-            "phone": "+1-555-987-6543"
+            "contact": {
+                "email": "jane.smith@techcorp.com",
+                "phone": "+1-555-987-6543"
+            }
         },
         {
             "name": "Mike Johnson",
             "title": "Senior Developer",
             "company": "StartupXYZ",
-            "email": "mike.johnson@startupxyz.com",
-            "phone": "+1-555-456-7890"
+            "contact": {
+                "email": "mike.johnson@startupxyz.com",
+                "phone": "+1-555-456-7890"
+            }
         }
     ],
     "certifications": [
@@ -380,8 +384,8 @@ SAMPLE_RESUME_PAYLOAD = {
         {
             "degree": "Bachelor of Science",
             "field": "Computer Science",
-            "school": "University of Technology",
-            "year": "2016"
+            "institution": "University of Technology",
+            "graduation_date": "2016"
         }
     ],
     "references": [
@@ -389,7 +393,10 @@ SAMPLE_RESUME_PAYLOAD = {
             "name": "Jane Smith",
             "title": "Engineering Manager",
             "company": "Tech Corp",
-            "email": "jane.smith@techcorp.com"
+            "contact": {
+                "email": "jane.smith@techcorp.com",
+                "phone": "+1-555-987-6543"
+            }
         }
     ],
     "title": "Senior Software Engineer",

@@ -36,17 +36,17 @@ def build_resume(data: dict) -> str:
 
             # ✅ Render the template with provided data (now includes optional fields)
             html_content = template.render(
-                name=data["name"],
-                email=data["email"],
-                phone=data["phone"],
-                linkedin=data["linkedin"],
+                name=data.get("name", "Unknown"),
+                email=data.get("email", ""),
+                phone=data.get("phone", ""),
+                linkedin=data.get("linkedin", ""),
                 github=data.get("github"),       # <-- ✅ Optional GitHub link
                 address=data.get("address"),     # <-- ✅ Optional address block
-                summary=data["summary"],
-                skills=data["skills"],
-                experiences=data["experiences"],
-                education=data["education"],
-                references=data["references"],
+                summary=data.get("summary", ""),
+                skills=data.get("skills") or [],
+                experiences=data.get("experiences") or [],
+                education=data.get("education") or [],
+                references=data.get("references") or [],
                 matched_keywords=data.get("matched_keywords", []),  # <-- ✅ Leave as list for template join
                 title=data.get("title", "N/A"),
                 company=data.get("company", "N/A"),

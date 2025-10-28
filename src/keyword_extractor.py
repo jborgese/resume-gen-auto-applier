@@ -18,14 +18,14 @@ def extract_keywords(description: str):
     """Return a list of relevant keywords from the description."""
     found_keywords = set()
 
-    # ✅ 1. Match dictionary terms (case-insensitive)
+    # ✅ 1. Match dictionary terms (case-insensitive) - no length filter for dictionary terms
     lower_desc = description.lower()
     for category, terms in TECH_DICT.items():
         for term in terms:
             if term.lower() in lower_desc:
                 found_keywords.add(term)
 
-    # ✅ 2. Use spaCy to find extra nouns/entities
+    # ✅ 2. Use spaCy to find extra nouns/entities - apply minimum length filter
     doc = nlp(description)
     for token in doc:
         # Grab potential skills (proper nouns & acronyms)

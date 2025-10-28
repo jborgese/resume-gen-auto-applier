@@ -327,8 +327,8 @@ class TestResumeBuilderIntegration:
                 {
                     "degree": f"Degree {i}",
                     "field": f"Field {i}",
-                    "school": f"School {i}",
-                    "year": "2018"
+                    "institution": f"School {i}",
+                    "graduation_date": "2018"
                 }
                 for i in range(3)
             ],
@@ -337,7 +337,10 @@ class TestResumeBuilderIntegration:
                     "name": f"Reference {i}",
                     "title": f"Title {i}",
                     "company": f"Company {i}",
-                    "email": f"ref{i}@example.com"
+                    "contact": {
+                        "email": f"ref{i}@example.com",
+                        "phone": f"+1-555-{i:03d}-{i:04d}"
+                    }
                 }
                 for i in range(5)
             ],
