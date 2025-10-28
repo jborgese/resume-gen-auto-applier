@@ -205,6 +205,10 @@ class LazyConfig:
         return _get_config_manager().settings.default_template
     
     @property
+    def SKIP_UNAVAILABLE_JOBS(self) -> bool:
+        return _get_config_manager().settings.skip_unavailable_jobs
+    
+    @property
     def DEBUG(self) -> bool:
         return _get_config_manager().debug
     
@@ -263,6 +267,7 @@ PORTFOLIO = _lazy_config.PORTFOLIO
 MAX_JOBS = _lazy_config.MAX_JOBS
 AUTO_APPLY = _lazy_config.AUTO_APPLY
 DEFAULT_TEMPLATE = _lazy_config.DEFAULT_TEMPLATE
+SKIP_UNAVAILABLE_JOBS = _lazy_config.SKIP_UNAVAILABLE_JOBS
 DEBUG = _lazy_config.DEBUG
 HEADLESS_MODE = _lazy_config.HEADLESS_MODE
 ENABLE_BROWSER_MONITORING = _lazy_config.ENABLE_BROWSER_MONITORING

@@ -3,6 +3,7 @@
 import os
 import tempfile
 import shutil
+import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from playwright.sync_api import Browser, BrowserContext, sync_playwright
@@ -27,6 +28,7 @@ class EnhancedBrowserConfig:
         self.temp_profile_dir = None
         self.browser = None
         self.context = None
+        self.stealth_session = None
         
     def create_clean_profile(self) -> str:
         """
@@ -400,6 +402,90 @@ class EnhancedBrowserConfig:
         }
         """
     
+    def get_enhanced_stealth_script(self) -> str:
+        """
+        Get enhanced JavaScript code to inject for advanced stealth operation.
+        This includes the original stealth script plus additional features.
+        """
+        base_script = self.get_stealth_script()
+        
+        enhanced_additions = """
+        // Enhanced stealth features for session management
+        
+        // Add session continuity markers
+        if (!window.stealthSessionData) {
+            window.stealthSessionData = {
+                sessionId: '""" + str(uuid.uuid4()) + """',
+                timestamp: Date.now(),
+                userAgent: navigator.userAgent,
+                fingerprint: null
+            };
+        }
+        
+        // Enhanced automation detection avoidance
+        Object.defineProperty(window, 'chrome', {
+            get: function() {
+                return {
+                    runtime: {
+                        onConnect: undefined,
+                        onMessage: undefined,
+                        connect: function() {},
+                        sendMessage: function() {}
+                    },
+                    app: {
+                        isInstalled: false
+                    }
+                };
+            }
+        });
+        
+        // Mock realistic performance timing
+        const originalNow = performance.now;
+        performance.now = function() {
+            return originalNow.call(this) + Math.random() * 0.1;
+        };
+        
+        // Enhanced mouse event simulation
+        let mouseEvents = [];
+        const originalAddEventListener = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (type.startsWith('mouse')) {
+                mouseEvents.push({type, timestamp: Date.now()});
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+        
+        // Simulate realistic scroll behavior
+        let scrollEvents = [];
+        const originalScrollTo = window.scrollTo;
+        window.scrollTo = function(x, y) {
+            scrollEvents.push({x, y, timestamp: Date.now()});
+            return originalScrollTo.call(this, x, y);
+        };
+        
+        // Enhanced console filtering
+        const originalConsoleLog = console.log;
+        console.log = function() {
+            const message = Array.prototype.join.call(arguments, ' ');
+            if (message.includes('stealth') || message.includes('automation')) {
+                return;
+            }
+            return originalConsoleLog.apply(console, arguments);
+        };
+        
+        // Add realistic browser behavior markers
+        window.stealthBehaviorMarkers = {
+            mouseEvents: mouseEvents,
+            scrollEvents: scrollEvents,
+            lastActivity: Date.now(),
+            sessionStart: Date.now()
+        };
+        
+        console.log('Enhanced stealth script loaded successfully');
+        """
+        
+        return base_script + enhanced_additions
+    
     def launch_browser(self, playwright) -> Browser:
         """
         Launch browser with enhanced configuration.
@@ -494,6 +580,112 @@ class EnhancedBrowserConfig:
             
         except Exception as e:
             logger.error(f"Failed to create browser context: {e}")
+            raise
+    
+    def get_stealth_config(self) -> Dict[str, Any]:
+        """
+        Get stealth configuration from app config.
+        
+        Returns:
+            Dictionary containing stealth configuration
+        """
+        try:
+            from src.config import get_config_manager
+            config_manager = get_config_manager()
+            app_config = config_manager.config
+            
+            # Extract stealth config
+            stealth_config = app_config.stealth_config.dict()
+            
+            # Add profile directory path
+            stealth_config['profile_dir'] = str(Path('stealth_profiles'))
+            
+            logger.debug("Retrieved stealth configuration", 
+                        config_keys=list(stealth_config.keys()))
+            
+            return stealth_config
+            
+        except Exception as e:
+            logger.warning("Could not retrieve stealth config, using defaults", error=str(e))
+            # Fallback to default configuration
+            return {
+                'profile_dir': 'stealth_profiles',
+                'enable_stealth_session': True,
+                'enable_personality_modeling': True,
+                'enable_fatigue_simulation': True,
+                'enable_interruption_simulation': True,
+                'enable_realistic_profiles': True,
+                'enable_session_fingerprinting': True,
+                'enable_behavioral_evolution': True,
+                'enable_distraction_simulation': True,
+                'session_persistence_method': 'localStorage',
+                'session_cleanup_interval': 3600,
+                'personality_consistency_level': 0.8,
+                'behavioral_variance': 0.2,
+                'profile_history_length': 100,
+                'profile_update_frequency': 86400,
+                'max_session_duration': 7200,
+                'session_save_interval': 300,
+                'profile_cleanup_age_days': 30
+            }
+
+    def create_context_with_stealth_session(self, browser: Browser) -> BrowserContext:
+        """
+        Create browser context with complete stealth session management.
+        
+        Args:
+            browser: Playwright browser object
+            
+        Returns:
+            Browser context with stealth session management
+        """
+        try:
+            # Initialize stealth session manager
+            from src.stealth_integration import StealthIntegration
+            
+            # Get stealth configuration
+            stealth_config = self.get_stealth_config()
+            
+            self.stealth_session = StealthIntegration(stealth_config)
+            
+            # Get realistic user agent and headers
+            user_agent = self.get_realistic_user_agent()
+            headers = self.get_stealth_headers()
+            
+            # Create context with enhanced stealth settings
+            self.context = browser.new_context(
+                user_agent=user_agent,
+                viewport={'width': 1920, 'height': 1080},
+                locale='en-US',
+                timezone_id='America/New_York',
+                extra_http_headers=headers,
+                ignore_https_errors=True,
+                device_scale_factor=1,
+                has_touch=False,
+                is_mobile=False,
+            )
+            
+            # Add enhanced stealth script first
+            stealth_script = self.get_enhanced_stealth_script()
+            self.context.add_init_script(stealth_script)
+            
+            # Set up request interception
+            self.context.route("**/*", self._handle_route)
+            
+            # Initialize stealth session after context is fully set up
+            try:
+                self.stealth_session.initialize_stealth_session(self.context)
+                logger.info("Stealth session initialized successfully")
+            except Exception as stealth_error:
+                logger.warning("Stealth session initialization failed, continuing without stealth", error=str(stealth_error))
+                # Continue without stealth session - the context is still valid
+                self.stealth_session = None
+            
+            logger.info("Browser context created with enhanced stealth session management")
+            return self.context
+            
+        except Exception as e:
+            logger.error(f"Failed to create context with stealth session: {e}")
             raise
     
     def _handle_route(self, route, request):

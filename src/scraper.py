@@ -89,15 +89,21 @@ class BrowserMonitor:
         max_failures = 5  # Only trigger after 5 consecutive failures
         check_interval = 5  # Check every 5 seconds (less frequent)
         
+        # Wait a bit before starting monitoring to allow browser to fully initialize
+        # This prevents false positives when the browser is still starting up
+        time.sleep(15)
+        
         while self.monitoring:
             try:
                 # Check if browser is still connected by trying to access browser contexts
                 # This is more reliable than creating new pages
                 contexts = self.browser.contexts
-                if contexts:  # If we have contexts, browser is still alive
+                if contexts and len(contexts) > 0:  # If we have contexts, browser is still alive
                     consecutive_failures = 0  # Reset failure counter on success
                 else:
-                    consecutive_failures += 1
+                    # Don't count empty contexts as failure immediately - browser might still be starting
+                    if consecutive_failures > 0:  # Only increment if we already had failures
+                        consecutive_failures += 1
                     
                 time.sleep(check_interval)
             except Exception as e:
@@ -193,15 +199,14 @@ def scrape_jobs_from_search(
         # Debug checkpoint after browser launch
         debug_checkpoint("browser_launched", browser_type="chromium")
         
-        # Create context with stealth settings
-        context = browser_config.create_context(browser)
+        # Create context with stealth session management
+        context = browser_config.create_context_with_stealth_session(browser)
         
         # Debug checkpoint after context creation
-        debug_checkpoint("browser_context_created")
+        debug_checkpoint("browser_context_created_with_stealth")
         
-        # Skip cookie usage to prevent automated behavior detection
-        logger.info("Using fresh login approach to avoid automated behavior detection")
-        skip_login = False
+        # Get stealth session manager
+        stealth_session = browser_config.stealth_session
         
         page = context.new_page()
         
@@ -219,14 +224,16 @@ def scrape_jobs_from_search(
         ui_handler = LinkedInUIChangeHandler(page)
         selector_fallback = SelectorFallback(page)
 
-        #  LOGIN 
-        if not skip_login:
+        # Session state restoration will be attempted after navigation
+        session_restored = False
+        
+        # LOGIN (only if session not restored)
+        if not session_restored:
             # Debug stop before login process
             if not debug_skip_stops():
                 debug_stop("About to start LinkedIn login process", 
                           email=email,
-                          search_url=search_url,
-                          skip_login=skip_login)
+                          search_url=search_url)
             
             with ErrorContext("LinkedIn login", page) as login_context:
                 login_context.add_context("email", email)
@@ -243,6 +250,18 @@ def scrape_jobs_from_search(
                            current_url=page.url, 
                            page_title=page.title())
                 
+                # Try to restore session state now that we have a valid page
+                if stealth_session and not session_restored:
+                    try:
+                        session_restored = stealth_session.restore_session_state(page)
+                        if session_restored:
+                            logger.info("Restored existing stealth session")
+                        else:
+                            logger.info("No existing session found, creating new stealth session")
+                    except Exception as e:
+                        logger.debug("Could not restore session state", error=str(e))
+                        session_restored = False
+                
                 # Check for UI changes before proceeding (with login context)
                 ui_changes = ui_handler.detect_ui_changes(context="login")
                 if ui_changes["login_page_changed"]:
@@ -250,49 +269,72 @@ def scrape_jobs_from_search(
                     if not ui_handler.adapt_to_changes(ui_changes):
                         raise LinkedInUIError("LinkedIn login page UI has changed and cannot be adapted")
                 
-                logger.info("Entering credentials")
-                
-                # Enhanced human behavior simulation before login
-                HumanBehavior.simulate_enhanced_hesitation(0.5, 1.5)
-                HumanBehavior.simulate_natural_viewport_interaction(page)
-                
-                # Use fallback selectors for login
-                username_success = selector_fallback.safe_fill(
-                    [config.LINKEDIN_SELECTORS["login"]["username"]], 
-                    email, 
-                    "username input"
-                )
-                if not username_success:
-                    raise LinkedInUIError("Could not find username input field")
-                
-                # Debug pause after username entry
-                debug_pause("Username entered successfully")
-                
-                password_success = selector_fallback.safe_fill(
-                    [config.LINKEDIN_SELECTORS["login"]["password"]], 
-                    password, 
-                    "password input"
-                )
-                if not password_success:
-                    raise LinkedInUIError("Could not find password input field")
-                
-                # Debug pause before clicking submit
-                debug_pause("Password entered successfully")
-                
-                submit_success = selector_fallback.safe_click(
-                    [config.LINKEDIN_SELECTORS["login"]["submit"]], 
-                    "login submit"
-                )
-                if not submit_success:
-                    raise LinkedInUIError("Could not find or click login submit button")
-                
-                # Give LinkedIn a moment to process the login
-                time.sleep(config.DELAYS["login_processing"])
+                # Check if we need to perform login
+                if session_restored:
+                    logger.info("Session restored, skipping login process")
+                else:
+                    logger.info("Performing stealth login with realistic behavior")
+                    
+                    # Use stealth session for realistic login flow
+                    if stealth_session:
+                        login_success = stealth_session.simulate_realistic_login_flow(page, email, password)
+                        if not login_success:
+                            logger.warning("Stealth login failed, falling back to standard login")
+                            # Fallback to standard login
+                            username_success = selector_fallback.safe_fill(
+                                [config.LINKEDIN_SELECTORS["login"]["username"]], 
+                                email, 
+                                "username input"
+                            )
+                            if not username_success:
+                                raise LinkedInUIError("Could not find username input field")
+                            
+                            password_success = selector_fallback.safe_fill(
+                                [config.LINKEDIN_SELECTORS["login"]["password"]], 
+                                password, 
+                                "password input"
+                            )
+                            if not password_success:
+                                raise LinkedInUIError("Could not find password input field")
+                            
+                            # Click login button
+                            submit_success = selector_fallback.safe_click(
+                                [config.LINKEDIN_SELECTORS["login"]["submit"]], 
+                                "login submit"
+                            )
+                            if not submit_success:
+                                raise LinkedInUIError("Could not find or click login submit button")
+                    else:
+                        # Fallback to standard login if stealth session not available
+                        logger.warning("Stealth session not available, using standard login")
+                        username_success = selector_fallback.safe_fill(
+                            [config.LINKEDIN_SELECTORS["login"]["username"]], 
+                            email, 
+                            "username input"
+                        )
+                        if not username_success:
+                            raise LinkedInUIError("Could not find username input field")
+                        
+                        password_success = selector_fallback.safe_fill(
+                            [config.LINKEDIN_SELECTORS["login"]["password"]], 
+                            password, 
+                            "password input"
+                        )
+                        if not password_success:
+                            raise LinkedInUIError("Could not find password input field")
+                        
+                        # Click login button
+                        submit_success = selector_fallback.safe_click(
+                            [config.LINKEDIN_SELECTORS["login"]["submit"]], 
+                            "login submit"
+                        )
+                        if not submit_success:
+                            raise LinkedInUIError("Could not find or click login submit button")
         
         # Check for login success using multiple methods
-        login_detected = skip_login  # If we skipped login, we're already logged in
+        login_detected = session_restored  # If we restored session, we're already logged in
         
-        if not skip_login:
+        if not session_restored:
             try:
                 # FIRST: Check for security verification page (must handle this before other login checks)
                 page_title = page.title()
@@ -722,6 +764,10 @@ def scrape_jobs_from_search(
                     try:
                         # Test if context is still valid by checking if we can create a page
                         job_page = context.new_page()
+                        
+                        # Maintain stealth session continuity
+                        if stealth_session:
+                            stealth_session.maintain_stealth_continuity(job_page)
                     except Exception as context_error:
                         logger.error("Browser context is no longer valid", error=str(context_error))
                         logger.error("Cannot process more jobs. Stopping.")
@@ -793,11 +839,74 @@ def scrape_jobs_from_search(
                             job_context.add_context("error", f"UnexpectedError: {error_msg}")
                             continue
 
-                    # [OK] Detect expired/unavailable job
-                    if job_page.locator(config.LINKEDIN_SELECTORS["job_detail"]["unavailable"]).count():
+                    # [OK] Enhanced job availability detection
+                    def is_job_unavailable(page):
+                        """
+                        Enhanced job availability detection with multiple indicators.
+                        Returns True if job is definitely unavailable, False otherwise.
+                        """
+                        try:
+                            # Wait for page to stabilize first
+                            time.sleep(2)
+                            
+                            # Check for multiple unavailable indicators
+                            unavailable_selectors = [
+                                config.LINKEDIN_SELECTORS["job_detail"]["unavailable"],
+                                "div.jobs-unavailable",
+                                "div[data-test-id*='unavailable']",
+                                "div:has-text('This job is no longer available')",
+                                "div:has-text('Job not found')",
+                                "div:has-text('This job posting is no longer available')"
+                            ]
+                            
+                            # Check for any unavailable indicators
+                            for selector in unavailable_selectors:
+                                if page.locator(selector).count() > 0:
+                                    logger.debug("Found unavailable indicator", selector=selector)
+                                    return True
+                            
+                            # Check for error pages or redirects
+                            current_url = page.url
+                            page_title = page.title()
+                            
+                            # If we're redirected to an error page or main jobs page
+                            if ("error" in current_url.lower() or 
+                                "not-found" in current_url.lower() or
+                                "jobs" in current_url.lower() and "view" not in current_url.lower()):
+                                logger.debug("Detected redirect to error/main page", current_url=current_url)
+                                return True
+                            
+                            # Check if page title indicates error
+                            if ("not found" in page_title.lower() or 
+                                "unavailable" in page_title.lower() or
+                                "error" in page_title.lower()):
+                                logger.debug("Page title indicates unavailability", page_title=page_title)
+                                return True
+                            
+                            # Check if job title element exists (basic availability check)
+                            try:
+                                title_element = page.locator("h1")
+                                if title_element.count() == 0:
+                                    logger.debug("No job title found - likely unavailable")
+                                    return True
+                            except:
+                                logger.debug("Could not check for job title")
+                                return True
+                            
+                            return False
+                            
+                        except Exception as e:
+                            logger.warning("Error checking job availability", error=str(e))
+                            # If we can't determine availability, assume it's available
+                            return False
+                    
+                    # Check if job is unavailable (only if enabled in config)
+                    if config.SKIP_UNAVAILABLE_JOBS and is_job_unavailable(job_page):
                         logger.info("Job is unavailable or expired", job_url=job_url)
                         job_page.close()
                         continue
+                    elif not config.SKIP_UNAVAILABLE_JOBS:
+                        logger.debug("Skipping unavailable job detection (disabled in config)")
 
                     job_page.wait_for_selector("h1", timeout=config.TIMEOUTS["job_title"])
                     
@@ -1236,8 +1345,22 @@ def scrape_jobs_from_search(
                     job_page.close()
 
                 except Exception as e:
-                    job_context.add_context("error", str(e))
-                    logger.error(f"Job processing failed: {e}")
+                    error_msg = str(e)
+                    job_context.add_context("error", error_msg)
+                    
+                    # Provide more detailed error information
+                    if error_msg == "'unavailable'":
+                        logger.error("Job processing failed: Job detected as unavailable", 
+                                   job_url=job_url, 
+                                   job_index=idx,
+                                   error_type="unavailable_detection")
+                        logger.info("This may be a false positive - check if the job is actually available")
+                    else:
+                        logger.error("Job processing failed", 
+                                   job_url=job_url, 
+                                   job_index=idx,
+                                   error=error_msg)
+                    
                     try:
                         job_page.close()
                     except:
@@ -1255,6 +1378,12 @@ def scrape_jobs_from_search(
             recommendations = resource_handler.get_recommendations()
             if recommendations:
                 print(f"[INFO] Recommendations: {', '.join(recommendations)}")
+        
+        # Cleanup stealth session
+        if stealth_session:
+            stealth_session.save_session_state(page)
+            stealth_session.cleanup_stealth_session()
+            logger.info("Stealth session cleaned up")
         
         # Cleanup browser configuration
         browser_config.cleanup()

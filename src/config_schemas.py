@@ -189,6 +189,40 @@ class QuestionConfig(BaseModel):
     })
 
 
+class StealthConfig(BaseModel):
+    """Stealth session configuration schema."""
+    
+    # Session Management
+    enable_stealth_session: bool = Field(default=True, description="Enable stealth session management")
+    session_persistence_method: str = Field(default="localStorage", description="Session persistence method: localStorage, sessionStorage, file")
+    session_cleanup_interval: int = Field(default=3600, ge=300, le=86400, description="Session cleanup interval in seconds")
+    
+    # Behavioral Patterns
+    enable_personality_modeling: bool = Field(default=True, description="Enable personality-based behavior modeling")
+    personality_consistency_level: float = Field(default=0.8, ge=0.0, le=1.0, description="Personality consistency level")
+    behavioral_variance: float = Field(default=0.2, ge=0.0, le=0.5, description="Behavioral variance factor")
+    
+    # Timing Patterns
+    enable_fatigue_simulation: bool = Field(default=True, description="Enable fatigue-based timing adjustments")
+    enable_time_of_day_patterns: bool = Field(default=True, description="Enable time-of-day pattern simulation")
+    enable_interruption_simulation: bool = Field(default=True, description="Enable interruption and distraction simulation")
+    
+    # Profile Management
+    enable_realistic_profiles: bool = Field(default=True, description="Enable realistic browser profile generation")
+    profile_history_length: int = Field(default=100, ge=10, le=1000, description="Length of browsing history to generate")
+    profile_update_frequency: int = Field(default=86400, ge=3600, le=604800, description="Profile update frequency in seconds")
+    
+    # Advanced Features
+    enable_session_fingerprinting: bool = Field(default=True, description="Enable session fingerprinting")
+    enable_behavioral_evolution: bool = Field(default=True, description="Enable behavioral pattern evolution")
+    enable_distraction_simulation: bool = Field(default=True, description="Enable distraction event simulation")
+    
+    # Performance Settings
+    max_session_duration: int = Field(default=7200, ge=1800, le=28800, description="Maximum session duration in seconds")
+    session_save_interval: int = Field(default=300, ge=60, le=1800, description="Session state save interval in seconds")
+    profile_cleanup_age_days: int = Field(default=30, ge=1, le=90, description="Profile cleanup age in days")
+
+
 class LinkedInSelectors(BaseModel):
     """LinkedIn CSS selectors configuration schema."""
     login: Dict[str, str]
@@ -263,10 +297,11 @@ class AppSettings(BaseSettings):
     max_jobs: int = Field(default=15, ge=1, le=100, description="Maximum jobs to scrape")
     auto_apply: bool = Field(default=True, description="Enable LinkedIn Easy Apply automation")
     default_template: str = Field(default="base_resume.html", description="Default resume template")
+    skip_unavailable_jobs: bool = Field(default=True, description="Skip jobs detected as unavailable")
     
     # Browser Configuration
     headless_mode: bool = Field(default=False, description="Run browser in headless mode")
-    enable_browser_monitoring: bool = Field(default=False, description="Monitor browser connection")
+    enable_browser_monitoring: bool = Field(default=False, description="Monitor browser connection (disabled by default due to false positives)")
     suppress_console_warnings: bool = Field(default=True, description="Suppress harmless browser warnings")
     
     # LLM Configuration
@@ -304,6 +339,7 @@ class AppConfig(BaseModel):
     file_paths: FilePaths
     keyword_weights: KeywordWeights = Field(default_factory=KeywordWeights)
     browser_config: BrowserConfig = Field(default_factory=BrowserConfig)
+    stealth_config: StealthConfig = Field(default_factory=StealthConfig)
     
     @model_validator(mode='after')
     @classmethod

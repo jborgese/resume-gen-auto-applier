@@ -1,0 +1,1830 @@
+{
+  "profile_id": "dd1d2015-bada-47e6-b9d7-d8cbb8d1fe74",
+  "demographics": {
+    "age_group": "35-44",
+    "location": "UK",
+    "timezone": "Europe/London",
+    "language": "en-AU",
+    "device_type": "desktop",
+    "os": "Linux",
+    "browser": "Chrome",
+    "screen_resolution": "1920x1080"
+  },
+  "browsing_patterns": {
+    "peak_hours": "afternoon",
+    "browsing_frequency": "daily",
+    "session_duration": 44.08654556687835,
+    "page_views_per_session": 5,
+    "scroll_behavior": "quick",
+    "click_behavior": "rapid",
+    "form_filling_style": "careful"
+  },
+  "browsing_history": [
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760439959.7277877,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760442426.7478478,
+      "session_duration": 71.2242213252217
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1760446063.8199916,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760448476.8645484,
+      "session_duration": 429.71807760018146
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760449335.3163013,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760452684.7194493,
+      "session_duration": 225.4678699705191
+    },
+    {
+      "url": "https://www.linkedin.com/feed/",
+      "title": "LinkedIn Feed",
+      "category": "professional",
+      "visit_time": 1760453884.6074245,
+      "visit_count": 2,
+      "page_views": 4,
+      "last_visit": 1760457147.4528253,
+      "session_duration": 542.6671152664062
+    },
+    {
+      "url": "https://www.linkedin.com/mynetwork/",
+      "title": "LinkedIn My Network",
+      "category": "professional",
+      "visit_time": 1760463521.0537946,
+      "visit_count": 4,
+      "page_views": 1,
+      "last_visit": 1760464857.342801,
+      "session_duration": 378.05048920028423
+    },
+    {
+      "url": "https://www.udemy.com/",
+      "title": "Udemy",
+      "category": "education",
+      "visit_time": 1760465995.2711403,
+      "visit_count": 8,
+      "page_views": 1,
+      "last_visit": 1760467231.3023543,
+      "session_duration": 547.4355516314922
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1760476588.2978199,
+      "visit_count": 6,
+      "page_views": 5,
+      "last_visit": 1760477421.6918843,
+      "session_duration": 60.985168529086714
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760483012.9663177,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760485216.346557,
+      "session_duration": 311.71788802039237
+    },
+    {
+      "url": "https://www.indeed.com/",
+      "title": "Indeed Jobs",
+      "category": "job_search",
+      "visit_time": 1760485843.1511962,
+      "visit_count": 6,
+      "page_views": 1,
+      "last_visit": 1760486510.9084418,
+      "session_duration": 240.81232145930736
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/",
+      "title": "LinkedIn Jobs",
+      "category": "job_search",
+      "visit_time": 1760492946.1013074,
+      "visit_count": 8,
+      "page_views": 5,
+      "last_visit": 1760496218.8573143,
+      "session_duration": 363.1409156583522
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1760497065.4500432,
+      "visit_count": 5,
+      "page_views": 2,
+      "last_visit": 1760499468.0605326,
+      "session_duration": 218.465018503078
+    },
+    {
+      "url": "https://www.amazon.com/",
+      "title": "Amazon",
+      "category": "shopping",
+      "visit_time": 1760504775.783628,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760505001.8690205,
+      "session_duration": 366.79665409917834
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1760508064.0706532,
+      "visit_count": 8,
+      "page_views": 2,
+      "last_visit": 1760508486.3239052,
+      "session_duration": 519.9803116593605
+    },
+    {
+      "url": "https://www.udemy.com/",
+      "title": "Udemy",
+      "category": "education",
+      "visit_time": 1760515178.9541678,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760515349.2017205,
+      "session_duration": 485.2543569684524
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760528305.12629,
+      "visit_count": 2,
+      "page_views": 2,
+      "last_visit": 1760531062.7943795,
+      "session_duration": 117.27653234616052
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1760530701.9531271,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760532281.4674747,
+      "session_duration": 279.62024849247297
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1760536874.6965747,
+      "visit_count": 5,
+      "page_views": 1,
+      "last_visit": 1760538286.449341,
+      "session_duration": 582.2545408968095
+    },
+    {
+      "url": "https://www.coursera.org/",
+      "title": "Coursera",
+      "category": "education",
+      "visit_time": 1760540304.9142528,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760541609.2381833,
+      "session_duration": 284.0858414118152
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1760542161.8364491,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760545101.986287,
+      "session_duration": 509.55329041909675
+    },
+    {
+      "url": "https://www.hackernews.com/",
+      "title": "Hacker News",
+      "category": "news",
+      "visit_time": 1760547699.5709534,
+      "visit_count": 7,
+      "page_views": 2,
+      "last_visit": 1760549913.3313882,
+      "session_duration": 430.7083811630416
+    },
+    {
+      "url": "https://www.youtube.com/",
+      "title": "YouTube",
+      "category": "entertainment",
+      "visit_time": 1760553008.0741925,
+      "visit_count": 7,
+      "page_views": 2,
+      "last_visit": 1760553149.3091962,
+      "session_duration": 510.3895639313287
+    },
+    {
+      "url": "https://www.reddit.com/r/programming/",
+      "title": "Programming Reddit",
+      "category": "community",
+      "visit_time": 1760555077.1367483,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760556121.3694763,
+      "session_duration": 163.50496960321624
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1760557536.9862587,
+      "visit_count": 6,
+      "page_views": 5,
+      "last_visit": 1760560679.5040913,
+      "session_duration": 62.26770527607511
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1760570698.9179893,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760573587.0816996,
+      "session_duration": 492.1736067693339
+    },
+    {
+      "url": "https://www.amazon.com/",
+      "title": "Amazon",
+      "category": "shopping",
+      "visit_time": 1760581112.755298,
+      "visit_count": 8,
+      "page_views": 3,
+      "last_visit": 1760581452.1986306,
+      "session_duration": 325.1251140245366
+    },
+    {
+      "url": "https://www.medium.com/",
+      "title": "Medium",
+      "category": "content",
+      "visit_time": 1760586973.9453847,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760587461.346014,
+      "session_duration": 456.04577868619555
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1760593995.5510893,
+      "visit_count": 8,
+      "page_views": 5,
+      "last_visit": 1760594949.4619234,
+      "session_duration": 298.1633733935087
+    },
+    {
+      "url": "https://github.com/",
+      "title": "GitHub",
+      "category": "development",
+      "visit_time": 1760603890.6989217,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760606611.645415,
+      "session_duration": 60.480633341796526
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1760608711.2366412,
+      "visit_count": 7,
+      "page_views": 4,
+      "last_visit": 1760609834.9173255,
+      "session_duration": 106.2703347736632
+    },
+    {
+      "url": "https://github.com/",
+      "title": "GitHub",
+      "category": "development",
+      "visit_time": 1760611557.5405276,
+      "visit_count": 3,
+      "page_views": 5,
+      "last_visit": 1760612379.3794367,
+      "session_duration": 539.593584978553
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1760615414.048482,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760616819.9901032,
+      "session_duration": 202.90252178698356
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1760620682.8960736,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760621412.2682247,
+      "session_duration": 548.4247846838447
+    },
+    {
+      "url": "https://www.medium.com/",
+      "title": "Medium",
+      "category": "content",
+      "visit_time": 1760624425.8792229,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760624699.8986223,
+      "session_duration": 292.05201762176137
+    },
+    {
+      "url": "https://www.amazon.com/",
+      "title": "Amazon",
+      "category": "shopping",
+      "visit_time": 1760636585.822496,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760637933.367598,
+      "session_duration": 492.5835038679741
+    },
+    {
+      "url": "https://www.medium.com/",
+      "title": "Medium",
+      "category": "content",
+      "visit_time": 1760642997.633181,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760645367.6518712,
+      "session_duration": 215.25934207010494
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1760650137.5239203,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760652419.2952201,
+      "session_duration": 346.8353449779911
+    },
+    {
+      "url": "https://www.cnn.com/",
+      "title": "CNN",
+      "category": "news",
+      "visit_time": 1760657061.8968449,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760660128.8322165,
+      "session_duration": 33.18373614083082
+    },
+    {
+      "url": "https://www.medium.com/",
+      "title": "Medium",
+      "category": "content",
+      "visit_time": 1760661478.498316,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760664309.432549,
+      "session_duration": 583.0600947650523
+    },
+    {
+      "url": "https://www.linkedin.com/feed/",
+      "title": "LinkedIn Feed",
+      "category": "professional",
+      "visit_time": 1760666131.6980975,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760666932.7160103,
+      "session_duration": 44.949316930395014
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1760677002.183354,
+      "visit_count": 4,
+      "page_views": 2,
+      "last_visit": 1760678166.456469,
+      "session_duration": 544.8667998941215
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1760690654.6051793,
+      "visit_count": 7,
+      "page_views": 1,
+      "last_visit": 1760693163.6256626,
+      "session_duration": 314.9428785168404
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1760695211.5155091,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760697431.5175695,
+      "session_duration": 302.4878586934756
+    },
+    {
+      "url": "https://www.nytimes.com/",
+      "title": "New York Times",
+      "category": "news",
+      "visit_time": 1760699902.5756264,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760702081.3152897,
+      "session_duration": 366.9518526731904
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1760703852.4337125,
+      "visit_count": 8,
+      "page_views": 5,
+      "last_visit": 1760704524.650676,
+      "session_duration": 565.6528570908157
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1760709371.087266,
+      "visit_count": 4,
+      "page_views": 2,
+      "last_visit": 1760711076.3703656,
+      "session_duration": 279.26928007955553
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1760711987.6001227,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760713181.3072708,
+      "session_duration": 594.9381572162845
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760722856.8356194,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760724106.4355834,
+      "session_duration": 470.6506223207107
+    },
+    {
+      "url": "https://www.indeed.com/",
+      "title": "Indeed Jobs",
+      "category": "job_search",
+      "visit_time": 1760727963.0317335,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760729885.3428895,
+      "session_duration": 559.6778748246295
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1760733787.4045265,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760734433.4396622,
+      "session_duration": 459.9244309780587
+    },
+    {
+      "url": "https://www.linkedin.com/mynetwork/",
+      "title": "LinkedIn My Network",
+      "category": "professional",
+      "visit_time": 1760739196.407456,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760741122.1470242,
+      "session_duration": 440.3771799828314
+    },
+    {
+      "url": "https://www.cnn.com/",
+      "title": "CNN",
+      "category": "news",
+      "visit_time": 1760745331.9781857,
+      "visit_count": 6,
+      "page_views": 3,
+      "last_visit": 1760745373.5365973,
+      "session_duration": 487.7330428423508
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1760749610.1449444,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760752254.2076743,
+      "session_duration": 551.5758361821537
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1760758704.524314,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760760041.9419875,
+      "session_duration": 488.1551048574813
+    },
+    {
+      "url": "https://www.reddit.com/r/programming/",
+      "title": "Programming Reddit",
+      "category": "community",
+      "visit_time": 1760760540.202482,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760763006.7787163,
+      "session_duration": 328.3159621899121
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1760766383.4892018,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760769331.8645751,
+      "session_duration": 148.5553885253452
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760778372.9027016,
+      "visit_count": 7,
+      "page_views": 4,
+      "last_visit": 1760779264.117515,
+      "session_duration": 265.64819971757424
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1760780988.807839,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760783098.2757351,
+      "session_duration": 131.0895171155064
+    },
+    {
+      "url": "https://www.hackernews.com/",
+      "title": "Hacker News",
+      "category": "news",
+      "visit_time": 1760785995.4670157,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760788440.6454651,
+      "session_duration": 284.6158421767528
+    },
+    {
+      "url": "https://www.monster.com/",
+      "title": "Monster Jobs",
+      "category": "job_search",
+      "visit_time": 1760787954.6533868,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760791193.5759244,
+      "session_duration": 187.38082981546614
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1760794055.555741,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760797058.4228704,
+      "session_duration": 197.45404262453644
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1760798763.585047,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760800961.8038886,
+      "session_duration": 286.3966049892638
+    },
+    {
+      "url": "https://www.udemy.com/",
+      "title": "Udemy",
+      "category": "education",
+      "visit_time": 1760810736.7957654,
+      "visit_count": 3,
+      "page_views": 5,
+      "last_visit": 1760811026.4324594,
+      "session_duration": 381.3112683450705
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760823559.4142547,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760826950.4887218,
+      "session_duration": 560.8031143993215
+    },
+    {
+      "url": "https://www.reddit.com/r/programming/",
+      "title": "Programming Reddit",
+      "category": "community",
+      "visit_time": 1760828846.6002958,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760831067.1661904,
+      "session_duration": 392.0634162701925
+    },
+    {
+      "url": "https://www.medium.com/",
+      "title": "Medium",
+      "category": "content",
+      "visit_time": 1760831444.2153158,
+      "visit_count": 5,
+      "page_views": 1,
+      "last_visit": 1760834092.2432714,
+      "session_duration": 300.712396789301
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1760837435.755366,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760839360.6607957,
+      "session_duration": 314.93320615234273
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1760839976.5096745,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760841814.028914,
+      "session_duration": 264.50146644415156
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/",
+      "title": "LinkedIn Jobs",
+      "category": "job_search",
+      "visit_time": 1760848215.566105,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760849361.038836,
+      "session_duration": 588.7734356962671
+    },
+    {
+      "url": "https://www.reddit.com/r/programming/",
+      "title": "Programming Reddit",
+      "category": "community",
+      "visit_time": 1760851531.8519237,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760853900.82292,
+      "session_duration": 325.59619731521207
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1760861476.8387709,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760863349.7297788,
+      "session_duration": 533.7976415624048
+    },
+    {
+      "url": "https://github.com/",
+      "title": "GitHub",
+      "category": "development",
+      "visit_time": 1760869190.0959344,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760872325.4157085,
+      "session_duration": 116.65727124371935
+    },
+    {
+      "url": "https://github.com/",
+      "title": "GitHub",
+      "category": "development",
+      "visit_time": 1760881339.4385786,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760884242.564884,
+      "session_duration": 449.9468180487528
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1760893732.64234,
+      "visit_count": 5,
+      "page_views": 1,
+      "last_visit": 1760893744.3759198,
+      "session_duration": 479.6229727720678
+    },
+    {
+      "url": "https://www.nytimes.com/",
+      "title": "New York Times",
+      "category": "news",
+      "visit_time": 1760899816.4197135,
+      "visit_count": 3,
+      "page_views": 2,
+      "last_visit": 1760901810.7972212,
+      "session_duration": 516.5029714606826
+    },
+    {
+      "url": "https://www.youtube.com/",
+      "title": "YouTube",
+      "category": "entertainment",
+      "visit_time": 1760905494.5594583,
+      "visit_count": 3,
+      "page_views": 2,
+      "last_visit": 1760906373.7256024,
+      "session_duration": 476.0676976097279
+    },
+    {
+      "url": "https://www.linkedin.com/feed/",
+      "title": "LinkedIn Feed",
+      "category": "professional",
+      "visit_time": 1760914163.7695563,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760916366.5613577,
+      "session_duration": 521.6766109637754
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1760927921.6877604,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1760928958.4395027,
+      "session_duration": 107.06759116291173
+    },
+    {
+      "url": "https://www.youtube.com/",
+      "title": "YouTube",
+      "category": "entertainment",
+      "visit_time": 1760936054.1247272,
+      "visit_count": 4,
+      "page_views": 5,
+      "last_visit": 1760938766.0323339,
+      "session_duration": 120.75350915154131
+    },
+    {
+      "url": "https://www.hackernews.com/",
+      "title": "Hacker News",
+      "category": "news",
+      "visit_time": 1760941865.9200284,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1760944215.0399275,
+      "session_duration": 542.9494372531228
+    },
+    {
+      "url": "https://www.linkedin.com/mynetwork/",
+      "title": "LinkedIn My Network",
+      "category": "professional",
+      "visit_time": 1760944665.625503,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1760946456.4021628,
+      "session_duration": 61.49749421553108
+    },
+    {
+      "url": "https://github.com/",
+      "title": "GitHub",
+      "category": "development",
+      "visit_time": 1760950142.5116549,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760953379.6588352,
+      "session_duration": 582.290611326884
+    },
+    {
+      "url": "https://www.nytimes.com/",
+      "title": "New York Times",
+      "category": "news",
+      "visit_time": 1760954153.5383532,
+      "visit_count": 5,
+      "page_views": 1,
+      "last_visit": 1760956326.622284,
+      "session_duration": 541.7056777987821
+    },
+    {
+      "url": "https://www.udemy.com/",
+      "title": "Udemy",
+      "category": "education",
+      "visit_time": 1760967561.4324496,
+      "visit_count": 7,
+      "page_views": 2,
+      "last_visit": 1760969734.6251452,
+      "session_duration": 492.7257829823474
+    },
+    {
+      "url": "https://www.cnn.com/",
+      "title": "CNN",
+      "category": "news",
+      "visit_time": 1760977779.396558,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1760977810.3625426,
+      "session_duration": 441.77193776295036
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1760983025.0902333,
+      "visit_count": 7,
+      "page_views": 1,
+      "last_visit": 1760984776.3064976,
+      "session_duration": 524.359561225152
+    },
+    {
+      "url": "https://www.monster.com/",
+      "title": "Monster Jobs",
+      "category": "job_search",
+      "visit_time": 1760994738.8149498,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1760996435.6889157,
+      "session_duration": 345.5465514148984
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1761008099.704791,
+      "visit_count": 5,
+      "page_views": 3,
+      "last_visit": 1761010959.883903,
+      "session_duration": 376.1303073936555
+    },
+    {
+      "url": "https://www.nytimes.com/",
+      "title": "New York Times",
+      "category": "news",
+      "visit_time": 1761009914.4174109,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1761013148.4875925,
+      "session_duration": 282.9482226193978
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1761016773.2610095,
+      "visit_count": 7,
+      "page_views": 2,
+      "last_visit": 1761017189.8638027,
+      "session_duration": 542.1673801303549
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1761023251.538328,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1761025239.8437316,
+      "session_duration": 393.5986460340918
+    },
+    {
+      "url": "https://www.medium.com/",
+      "title": "Medium",
+      "category": "content",
+      "visit_time": 1761030371.501651,
+      "visit_count": 4,
+      "page_views": 1,
+      "last_visit": 1761033611.7326434,
+      "session_duration": 387.20529956775516
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1761032799.3828566,
+      "visit_count": 8,
+      "page_views": 2,
+      "last_visit": 1761035926.1193876,
+      "session_duration": 139.7542633192331
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1761042615.5127664,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1761044863.463091,
+      "session_duration": 549.4329227314485
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1761050372.7201917,
+      "visit_count": 4,
+      "page_views": 5,
+      "last_visit": 1761050953.954224,
+      "session_duration": 339.21953087389727
+    },
+    {
+      "url": "https://www.linkedin.com/feed/",
+      "title": "LinkedIn Feed",
+      "category": "professional",
+      "visit_time": 1761053295.770251,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761054444.8286123,
+      "session_duration": 149.6021674706236
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1761055555.280669,
+      "visit_count": 4,
+      "page_views": 2,
+      "last_visit": 1761057866.0178936,
+      "session_duration": 191.39934078970182
+    },
+    {
+      "url": "https://www.reddit.com/r/programming/",
+      "title": "Programming Reddit",
+      "category": "community",
+      "visit_time": 1761058764.831829,
+      "visit_count": 3,
+      "page_views": 2,
+      "last_visit": 1761059866.7363868,
+      "session_duration": 425.42511220431385
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1761068920.0942318,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761070502.8364928,
+      "session_duration": 521.9983495521285
+    },
+    {
+      "url": "https://www.linkedin.com/feed/",
+      "title": "LinkedIn Feed",
+      "category": "professional",
+      "visit_time": 1761074543.2691052,
+      "visit_count": 2,
+      "page_views": 1,
+      "last_visit": 1761077463.799162,
+      "session_duration": 296.3846224951589
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/",
+      "title": "LinkedIn Jobs",
+      "category": "job_search",
+      "visit_time": 1761076846.8854814,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1761078151.1032348,
+      "session_duration": 226.3099874363349
+    },
+    {
+      "url": "https://www.coursera.org/",
+      "title": "Coursera",
+      "category": "education",
+      "visit_time": 1761081886.612364,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1761084332.2647336,
+      "session_duration": 295.6434562910287
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1761083876.393083,
+      "visit_count": 4,
+      "page_views": 4,
+      "last_visit": 1761086892.8671925,
+      "session_duration": 522.6352021767983
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1761087502.7967443,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1761090837.046428,
+      "session_duration": 98.3833733041609
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1761096215.7663393,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761098778.1258805,
+      "session_duration": 355.11329164657224
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1761100895.6292655,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1761103897.6591523,
+      "session_duration": 444.04319025679865
+    },
+    {
+      "url": "https://www.glassdoor.com/",
+      "title": "Glassdoor",
+      "category": "job_search",
+      "visit_time": 1761103510.8371537,
+      "visit_count": 6,
+      "page_views": 4,
+      "last_visit": 1761104671.4953783,
+      "session_duration": 520.9562462746735
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1761107159.1388912,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1761107719.791837,
+      "session_duration": 552.9855160345627
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1761114875.7932484,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761117704.6087651,
+      "session_duration": 526.1280793894117
+    },
+    {
+      "url": "https://www.udemy.com/",
+      "title": "Udemy",
+      "category": "education",
+      "visit_time": 1761118097.9568257,
+      "visit_count": 6,
+      "page_views": 3,
+      "last_visit": 1761119448.7582943,
+      "session_duration": 426.1491106254126
+    },
+    {
+      "url": "https://www.hackernews.com/",
+      "title": "Hacker News",
+      "category": "news",
+      "visit_time": 1761125161.4457903,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761125655.1938303,
+      "session_duration": 45.749031448906635
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1761132995.0129678,
+      "visit_count": 6,
+      "page_views": 1,
+      "last_visit": 1761134954.361601,
+      "session_duration": 293.09397679777663
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/",
+      "title": "LinkedIn Jobs",
+      "category": "job_search",
+      "visit_time": 1761134951.331211,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761136831.962592,
+      "session_duration": 555.5361507573863
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1761138934.040852,
+      "visit_count": 4,
+      "page_views": 3,
+      "last_visit": 1761140894.2151098,
+      "session_duration": 135.0091157291128
+    },
+    {
+      "url": "https://www.coursera.org/",
+      "title": "Coursera",
+      "category": "education",
+      "visit_time": 1761150876.6710331,
+      "visit_count": 8,
+      "page_views": 4,
+      "last_visit": 1761153713.0485594,
+      "session_duration": 358.65229620702553
+    },
+    {
+      "url": "https://www.linkedin.com/learning/",
+      "title": "LinkedIn Learning",
+      "category": "education",
+      "visit_time": 1761161765.689787,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1761165244.791027,
+      "session_duration": 170.08007639592452
+    },
+    {
+      "url": "https://www.hackernews.com/",
+      "title": "Hacker News",
+      "category": "news",
+      "visit_time": 1761174952.8833091,
+      "visit_count": 4,
+      "page_views": 2,
+      "last_visit": 1761176998.7091112,
+      "session_duration": 326.7512564959776
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1761187496.999428,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761187927.146936,
+      "session_duration": 524.8203536298631
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1761194956.390742,
+      "visit_count": 2,
+      "page_views": 5,
+      "last_visit": 1761195214.3383548,
+      "session_duration": 237.99899809829702
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/",
+      "title": "LinkedIn Jobs",
+      "category": "job_search",
+      "visit_time": 1761200987.872919,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761201073.5200622,
+      "session_duration": 44.782600631371736
+    },
+    {
+      "url": "https://www.youtube.com/",
+      "title": "YouTube",
+      "category": "entertainment",
+      "visit_time": 1761205169.3537886,
+      "visit_count": 7,
+      "page_views": 4,
+      "last_visit": 1761205308.4805486,
+      "session_duration": 549.2699084264251
+    },
+    {
+      "url": "https://www.linkedin.com/feed/",
+      "title": "LinkedIn Feed",
+      "category": "professional",
+      "visit_time": 1761213167.1662703,
+      "visit_count": 4,
+      "page_views": 1,
+      "last_visit": 1761215102.6849587,
+      "session_duration": 445.8316560117384
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1761215942.0210671,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761217135.606309,
+      "session_duration": 321.46047434840443
+    },
+    {
+      "url": "https://www.udemy.com/",
+      "title": "Udemy",
+      "category": "education",
+      "visit_time": 1761226812.8983326,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1761229418.603942,
+      "session_duration": 152.55280488713376
+    },
+    {
+      "url": "https://github.com/",
+      "title": "GitHub",
+      "category": "development",
+      "visit_time": 1761231507.5723107,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761232659.6732824,
+      "session_duration": 386.81246027995644
+    },
+    {
+      "url": "https://www.indeed.com/",
+      "title": "Indeed Jobs",
+      "category": "job_search",
+      "visit_time": 1761234161.0439792,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761236296.2806437,
+      "session_duration": 237.8337238177176
+    },
+    {
+      "url": "https://www.reddit.com/r/programming/",
+      "title": "Programming Reddit",
+      "category": "community",
+      "visit_time": 1761239542.9513845,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1761241456.919786,
+      "session_duration": 343.8418324704625
+    },
+    {
+      "url": "https://www.hackernews.com/",
+      "title": "Hacker News",
+      "category": "news",
+      "visit_time": 1761245304.9322362,
+      "visit_count": 5,
+      "page_views": 3,
+      "last_visit": 1761245503.12722,
+      "session_duration": 439.8322197752781
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1761250330.35157,
+      "visit_count": 3,
+      "page_views": 2,
+      "last_visit": 1761253091.6678584,
+      "session_duration": 195.46137317663903
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/",
+      "title": "LinkedIn Jobs",
+      "category": "job_search",
+      "visit_time": 1761256462.3339639,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761257206.7244792,
+      "session_duration": 540.329967190409
+    },
+    {
+      "url": "https://www.medium.com/",
+      "title": "Medium",
+      "category": "content",
+      "visit_time": 1761260068.4623551,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1761262866.9247577,
+      "session_duration": 179.6374876064335
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1761272799.9533994,
+      "visit_count": 1,
+      "page_views": 4,
+      "last_visit": 1761273341.1146252,
+      "session_duration": 342.17246652660197
+    },
+    {
+      "url": "https://www.monster.com/",
+      "title": "Monster Jobs",
+      "category": "job_search",
+      "visit_time": 1761279166.0854352,
+      "visit_count": 8,
+      "page_views": 2,
+      "last_visit": 1761282013.5776696,
+      "session_duration": 563.3470164820679
+    },
+    {
+      "url": "https://www.reddit.com/",
+      "title": "Reddit",
+      "category": "community",
+      "visit_time": 1761281725.5705457,
+      "visit_count": 4,
+      "page_views": 3,
+      "last_visit": 1761284244.8114958,
+      "session_duration": 555.2012611783819
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1761285810.0678666,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1761288867.9122663,
+      "session_duration": 560.3935724900912
+    },
+    {
+      "url": "https://www.indeed.com/",
+      "title": "Indeed Jobs",
+      "category": "job_search",
+      "visit_time": 1761288455.2135487,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761290569.511574,
+      "session_duration": 325.7055566927837
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1761292460.6333508,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761293191.024976,
+      "session_duration": 456.7065965115313
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1761297145.9955585,
+      "visit_count": 8,
+      "page_views": 2,
+      "last_visit": 1761299194.4327536,
+      "session_duration": 573.9893326165819
+    },
+    {
+      "url": "https://www.bbc.com/",
+      "title": "BBC News",
+      "category": "news",
+      "visit_time": 1761299413.292043,
+      "visit_count": 3,
+      "page_views": 4,
+      "last_visit": 1761300101.5927508,
+      "session_duration": 456.3965993157863
+    },
+    {
+      "url": "https://stackoverflow.com/",
+      "title": "Stack Overflow",
+      "category": "development",
+      "visit_time": 1761305686.4653869,
+      "visit_count": 1,
+      "page_views": 5,
+      "last_visit": 1761309059.6775818,
+      "session_duration": 213.90159654040409
+    },
+    {
+      "url": "https://www.techcrunch.com/",
+      "title": "TechCrunch",
+      "category": "news",
+      "visit_time": 1761311026.8103359,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1761313722.826579,
+      "session_duration": 459.4399571288832
+    },
+    {
+      "url": "https://www.coursera.org/",
+      "title": "Coursera",
+      "category": "education",
+      "visit_time": 1761314486.799633,
+      "visit_count": 2,
+      "page_views": 3,
+      "last_visit": 1761314584.5074563,
+      "session_duration": 556.5696840318531
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1761322239.7872736,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1761323375.2223787,
+      "session_duration": 102.83275347303007
+    },
+    {
+      "url": "https://www.hackernews.com/",
+      "title": "Hacker News",
+      "category": "news",
+      "visit_time": 1761329276.8297367,
+      "visit_count": 5,
+      "page_views": 5,
+      "last_visit": 1761330652.6351817,
+      "session_duration": 448.5564378320714
+    },
+    {
+      "url": "https://www.google.com/",
+      "title": "Google",
+      "category": "search",
+      "visit_time": 1761342788.043708,
+      "visit_count": 7,
+      "page_views": 1,
+      "last_visit": 1761343691.6729386,
+      "session_duration": 366.36599381255877
+    },
+    {
+      "url": "https://www.cnn.com/",
+      "title": "CNN",
+      "category": "news",
+      "visit_time": 1761345544.6824553,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1761346751.3503978,
+      "session_duration": 99.79012112404777
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1761350061.029408,
+      "visit_count": 1,
+      "page_views": 2,
+      "last_visit": 1761351318.7633383,
+      "session_duration": 139.9232470781248
+    },
+    {
+      "url": "https://www.wikipedia.org/",
+      "title": "Wikipedia",
+      "category": "reference",
+      "visit_time": 1761352067.0845242,
+      "visit_count": 1,
+      "page_views": 3,
+      "last_visit": 1761354875.209412,
+      "session_duration": 578.1666218902692
+    },
+    {
+      "url": "https://www.nytimes.com/",
+      "title": "New York Times",
+      "category": "news",
+      "visit_time": 1761363851.6894767,
+      "visit_count": 1,
+      "page_views": 1,
+      "last_visit": 1761366115.8794734,
+      "session_duration": 472.70394284113917
+    }
+  ],
+  "preferences": {
+    "language": "en-AU",
+    "timezone": "Europe/London",
+    "date_format": "DD/MM/YYYY",
+    "number_format": "International",
+    "theme": "light",
+    "notifications": {
+      "email": false,
+      "push": true,
+      "sms": false,
+      "desktop": true,
+      "browser": false
+    },
+    "privacy": {
+      "tracking_protection": true,
+      "do_not_track": true,
+      "third_party_cookies": false,
+      "location_sharing": true,
+      "analytics_opt_out": false
+    },
+    "accessibility": {
+      "high_contrast": false,
+      "reduced_motion": true,
+      "screen_reader": false,
+      "font_size": "large",
+      "zoom_level": 118.20202723259565
+    },
+    "performance": {
+      "hardware_acceleration": true,
+      "preload_pages": false,
+      "cache_size": 179,
+      "image_quality": "high",
+      "video_quality": "high"
+    },
+    "security": {
+      "password_manager": true,
+      "two_factor_auth": true,
+      "secure_browsing": false,
+      "phishing_protection": false
+    }
+  },
+  "cache_data": {
+    "images": [
+      {
+        "url": "https://static.licdn.com/sc/h/abc123",
+        "size": 5644,
+        "type": "image/jpeg",
+        "cached_time": 1761581300.274973,
+        "access_count": 6
+      },
+      {
+        "url": "https://media.licdn.com/dms/image/def456",
+        "size": 18265,
+        "type": "image/png",
+        "cached_time": 1761633742.0059617,
+        "access_count": 1
+      },
+      {
+        "url": "https://static.licdn.com/sc/h/company-logo",
+        "size": 1737,
+        "type": "image/svg+xml",
+        "cached_time": 1761633117.0449145,
+        "access_count": 1
+      }
+    ],
+    "css": [
+      {
+        "url": "https://static.licdn.com/sc/h/styles.css",
+        "size": 1721,
+        "type": "text/css",
+        "cached_time": 1761590901.0036275,
+        "access_count": 2
+      },
+      {
+        "url": "https://static.licdn.com/sc/h/components.css",
+        "size": 2295,
+        "type": "text/css",
+        "cached_time": 1761584795.2346215,
+        "access_count": 8
+      }
+    ],
+    "js": [
+      {
+        "url": "https://static.licdn.com/sc/h/script.js",
+        "size": 4385,
+        "type": "application/javascript",
+        "cached_time": 1761615762.8303978,
+        "access_count": 22
+      },
+      {
+        "url": "https://static.licdn.com/sc/h/vendor.js",
+        "size": 3447,
+        "type": "application/javascript",
+        "cached_time": 1761572806.1060014,
+        "access_count": 18
+      }
+    ],
+    "fonts": [
+      {
+        "url": "https://static.licdn.com/sc/h/font.woff2",
+        "size": 4589,
+        "type": "font/woff2",
+        "cached_time": 1761637373.3030062,
+        "access_count": 10
+      }
+    ]
+  },
+  "local_storage_data": {
+    "user_preferences": {
+      "theme": "dark",
+      "language": "en-AU",
+      "notifications_enabled": true,
+      "auto_save": false,
+      "remember_me": true
+    },
+    "session_data": {
+      "last_activity": 1761647050.1055949,
+      "page_views": 30,
+      "interaction_count": 477,
+      "session_duration": 2944.134520601502,
+      "login_count": 9
+    },
+    "form_data": {
+      "saved_searches": [
+        "software engineer",
+        "python developer",
+        "remote jobs",
+        "senior developer",
+        "full stack developer"
+      ],
+      "recent_companies": [
+        "Google",
+        "Microsoft",
+        "Amazon",
+        "Apple",
+        "Meta",
+        "Netflix",
+        "Spotify"
+      ],
+      "saved_locations": [
+        "San Francisco, CA",
+        "New York, NY",
+        "Seattle, WA",
+        "Austin, TX",
+        "Remote"
+      ]
+    },
+    "analytics_data": {
+      "page_load_times": [
+        1.9841302662369336,
+        1.6933638738399532,
+        1.611236780834639,
+        2.573996357145483,
+        0.6676603180662667,
+        2.0276948497227734,
+        1.1360246651910761,
+        1.2344793909740948,
+        0.5098494622431058,
+        1.8446123572768574,
+        1.987034129466679,
+        1.7794758852737853,
+        1.4517590860697809,
+        1.445305267665249,
+        0.7794870647172137,
+        2.2447729093738036,
+        1.4333969149976524,
+        1.2909794321743313,
+        2.4255420956957425,
+        0.5512205107532687
+      ],
+      "click_events": 644,
+      "scroll_events": 4669,
+      "form_submissions": 11
+    }
+  },
+  "bookmarks": [
+    {
+      "title": "LinkedIn Jobs",
+      "url": "https://www.linkedin.com/jobs/",
+      "folder": "Job Search",
+      "created_at": 1760042703.2063928,
+      "access_count": 20
+    },
+    {
+      "title": "GitHub",
+      "url": "https://github.com/",
+      "folder": "Development",
+      "created_at": 1760524834.6257906,
+      "access_count": 10
+    },
+    {
+      "title": "Stack Overflow",
+      "url": "https://stackoverflow.com/",
+      "folder": "Development",
+      "created_at": 1760085003.114299,
+      "access_count": 9
+    },
+    {
+      "title": "Indeed Jobs",
+      "url": "https://www.indeed.com/",
+      "folder": "Job Search",
+      "created_at": 1761301379.8861313,
+      "access_count": 2
+    },
+    {
+      "title": "Google",
+      "url": "https://www.google.com/",
+      "folder": "General",
+      "created_at": 1760247519.9176369,
+      "access_count": 2
+    }
+  ],
+  "downloads": [
+    {
+      "filename": "resume_template.docx",
+      "url": "https://example.com/resume-template.docx",
+      "size": 1674,
+      "download_time": 1761264090.0286045,
+      "file_type": "document"
+    },
+    {
+      "filename": "job_description.pdf",
+      "url": "https://example.com/job-description.pdf",
+      "size": 3787,
+      "download_time": 1761437725.6998518,
+      "file_type": "document"
+    },
+    {
+      "filename": "company_logo.png",
+      "url": "https://example.com/logo.png",
+      "size": 1025,
+      "download_time": 1761571063.5235019,
+      "file_type": "image"
+    }
+  ],
+  "search_history": [
+    {
+      "term": "python developer jobs",
+      "timestamp": 1760555326.4182673,
+      "result_count": 5643,
+      "clicked_results": 3
+    },
+    {
+      "term": "remote software engineer",
+      "timestamp": 1760559681.8978353,
+      "result_count": 1180,
+      "clicked_results": 1
+    },
+    {
+      "term": "senior developer salary",
+      "timestamp": 1761100202.0128884,
+      "result_count": 7728,
+      "clicked_results": 4
+    },
+    {
+      "term": "resume writing advice",
+      "timestamp": 1760845229.1040022,
+      "result_count": 4056,
+      "clicked_results": 2
+    },
+    {
+      "term": "interview preparation",
+      "timestamp": 1761123624.9899948,
+      "result_count": 7900,
+      "clicked_results": 2
+    },
+    {
+      "term": "coding interview questions",
+      "timestamp": 1760798194.9947824,
+      "result_count": 3053,
+      "clicked_results": 4
+    },
+    {
+      "term": "tech companies hiring",
+      "timestamp": 1760511010.4094534,
+      "result_count": 4371,
+      "clicked_results": 5
+    },
+    {
+      "term": "software engineering trends",
+      "timestamp": 1761311384.8072872,
+      "result_count": 2233,
+      "clicked_results": 3
+    },
+    {
+      "term": "career development",
+      "timestamp": 1761337879.6340833,
+      "result_count": 6448,
+      "clicked_results": 1
+    }
+  ],
+  "form_data": {
+    "contact_info": {
+      "email": "user@example.com",
+      "phone": "(899) 782-2650",
+      "address": "3690 Main St",
+      "city": "Seattle",
+      "state": "TX",
+      "zip": "78739"
+    },
+    "professional_info": {
+      "current_title": "Python Developer",
+      "experience_years": 13,
+      "education_level": "Bachelor",
+      "skills": [
+        "Python",
+        "JavaScript",
+        "React",
+        "Node.js",
+        "SQL",
+        "AWS",
+        "Docker",
+        "Git",
+        "Agile",
+        "Machine Learning"
+      ]
+    },
+    "preferences": {
+      "job_type": "Part-time",
+      "remote_preference": "On-site",
+      "salary_range": "$200k - $271k",
+      "location_preference": "Any"
+    }
+  },
+  "created_at": 1761649559.7277877,
+  "last_updated": 1761649559.7277877
+}
