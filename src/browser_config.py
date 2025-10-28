@@ -144,80 +144,73 @@ class EnhancedBrowserConfig:
         return """
         // Remove webdriver property
         Object.defineProperty(navigator, 'webdriver', {
-            get: () => undefined,
+            get: function() { return undefined; }
         });
         
         // Mock plugins
         Object.defineProperty(navigator, 'plugins', {
-            get: () => [1, 2, 3, 4, 5],
+            get: function() { return [1, 2, 3, 4, 5]; }
         });
         
         // Mock languages
         Object.defineProperty(navigator, 'languages', {
-            get: () => ['en-US', 'en'],
+            get: function() { return ['en-US', 'en']; }
         });
         
         // Mock chrome runtime
         window.chrome = {
-            runtime: {},
+            runtime: {}
         };
         
         // Mock permissions
-        const originalQuery = window.navigator.permissions.query;
-        window.navigator.permissions.query = (parameters) => (
-            parameters.name === 'notifications' ?
-                Promise.resolve({ state: Notification.permission }) :
-                originalQuery(parameters)
-        );
+        if (window.navigator && window.navigator.permissions && window.navigator.permissions.query) {
+            var originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = function(parameters) {
+                if (parameters.name === 'notifications') {
+                    return Promise.resolve({ state: Notification.permission });
+                }
+                return originalQuery(parameters);
+            };
+        }
         
         // Block resource loading errors from console
-        const originalError = console.error;
-        console.error = function(...args) {
-            const message = args.join(' ');
-            if (message.includes('Failed to load resource') && 
-                (message.includes('chrome-extension://') || 
-                 message.includes('net::ERR_BLOCKED_BY_CLIENT'))) {
-                return; // Suppress these errors
-            }
-            // Suppress LinkedIn-specific warnings
-            if (message.includes('BooleanExpression with operator "numericGreaterThan"') ||
-                message.includes('EventSource\'s response has a Content-Type') ||
-                message.includes('Content contains tags or attributes that are not allowed') ||
-                message.includes('HTML sanitized:') ||
-                message.includes('Attribute \'exception.tags\' of type \'object\'') ||
-                message.includes('TypeError: network error')) {
-                return; // Suppress these LinkedIn warnings
-            }
-            originalError.apply(console, args);
-        };
+        if (console && console.error) {
+            var originalError = console.error;
+            console.error = function() {
+                var message = Array.prototype.join.call(arguments, ' ');
+                if (message.includes('Failed to load resource') && 
+                    (message.includes('chrome-extension://') || 
+                     message.includes('net::ERR_BLOCKED_BY_CLIENT'))) {
+                    return;
+                }
+                if (message.includes('BooleanExpression with operator "numericGreaterThan"') ||
+                    message.includes('EventSource response has a Content-Type') ||
+                    message.includes('Content contains tags or attributes that are not allowed') ||
+                    message.includes('HTML sanitized:') ||
+                    message.includes('Attribute exception.tags of type object') ||
+                    message.includes('TypeError: network error')) {
+                    return;
+                }
+                originalError.apply(console, arguments);
+            };
+        }
         
         // Block third-party cookie warnings
-        const originalWarn = console.warn;
-        console.warn = function(...args) {
-            const message = args.join(' ');
-            if (message.includes('Third-party cookie will be blocked') ||
-                message.includes('BooleanExpression with operator "numericGreaterThan"') ||
-                message.includes('EventSource\'s response has a Content-Type') ||
-                message.includes('Content contains tags or attributes that are not allowed') ||
-                message.includes('HTML sanitized:') ||
-                message.includes('Attribute \'exception.tags\' of type \'object\'')) {
-                return; // Suppress these warnings
-            }
-            originalWarn.apply(console, args);
-        };
-        
-        // Override resource loading to handle blocked resources gracefully
-        const originalFetch = window.fetch;
-        window.fetch = function(...args) {
-            return originalFetch.apply(this, args).catch(error => {
-                if (error.message.includes('ERR_BLOCKED_BY_CLIENT') ||
-                    error.message.includes('chrome-extension://')) {
-                    // Return a mock response for blocked resources
-                    return Promise.resolve(new Response('', { status: 200 }));
+        if (console && console.warn) {
+            var originalWarn = console.warn;
+            console.warn = function() {
+                var message = Array.prototype.join.call(arguments, ' ');
+                if (message.includes('Third-party cookie will be blocked') ||
+                    message.includes('BooleanExpression with operator "numericGreaterThan"') ||
+                    message.includes('EventSource response has a Content-Type') ||
+                    message.includes('Content contains tags or attributes that are not allowed') ||
+                    message.includes('HTML sanitized:') ||
+                    message.includes('Attribute exception.tags of type object')) {
+                    return;
                 }
-                throw error;
-            });
-        };
+                originalWarn.apply(console, arguments);
+            };
+        }
         """
     
     def launch_browser(self, playwright) -> Browser:
