@@ -533,85 +533,82 @@ class PersistentProfileManager:
             // Inject comprehensive profile data
             const profileData = {json.dumps(self.profile_data)};
             
-            // Inject browsing history simulation
+            // Store browsing history for stealth (safe approach)
             const history = profileData.browsing_history;
-            if (window.history && window.history.pushState) {{
-                console.log('Simulated browsing history:', history.length, 'items');
-                
-                // Add some history entries (limited by browser security)
-                history.slice(0, 5).forEach((item, index) => {{
-                    try {{
-                        window.history.pushState({{}}, item.title, item.url);
-                    }} catch (e) {{
-                        // Ignore security errors
-                    }}
-                }});
+            try {{
+                localStorage.setItem('stealth_browsing_history', JSON.stringify(history.slice(0, 10)));
+                console.log('Stored browsing history:', history.length, 'items');
+            }} catch (e) {{
+                console.log('Could not store browsing history:', e.message);
             }}
             
-            // Inject preferences into localStorage
+            // Inject preferences into localStorage (safe)
             const preferences = profileData.preferences;
-            localStorage.setItem('user_preferences', JSON.stringify(preferences));
+            try {{
+                localStorage.setItem('user_preferences', JSON.stringify(preferences));
+            }} catch (e) {{
+                console.log('Could not set user preferences:', e.message);
+            }}
             
-            // Inject session data
+            // Inject session data (safe)
             const sessionData = profileData.local_storage_data;
-            localStorage.setItem('session_data', JSON.stringify(sessionData));
+            try {{
+                localStorage.setItem('session_data', JSON.stringify(sessionData));
+            }} catch (e) {{
+                console.log('Could not set session data:', e.message);
+            }}
             
-            // Inject form data
+            // Inject form data (safe)
             const formData = profileData.form_data;
-            localStorage.setItem('form_data', JSON.stringify(formData));
+            try {{
+                localStorage.setItem('form_data', JSON.stringify(formData));
+            }} catch (e) {{
+                console.log('Could not set form data:', e.message);
+            }}
             
-            // Inject bookmarks
+            // Inject bookmarks (safe)
             const bookmarks = profileData.bookmarks;
-            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            try {{
+                localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            }} catch (e) {{
+                console.log('Could not set bookmarks:', e.message);
+            }}
             
-            // Inject search history
+            // Inject search history (safe)
             const searchHistory = profileData.search_history;
-            localStorage.setItem('search_history', JSON.stringify(searchHistory));
+            try {{
+                localStorage.setItem('search_history', JSON.stringify(searchHistory));
+            }} catch (e) {{
+                console.log('Could not set search history:', e.message);
+            }}
             
-            // Inject cache simulation data
+            // Inject cache simulation data (safe)
             const cacheData = profileData.cache_data;
-            sessionStorage.setItem('cache_simulation', JSON.stringify(cacheData));
+            try {{
+                sessionStorage.setItem('cache_simulation', JSON.stringify(cacheData));
+            }} catch (e) {{
+                console.log('Could not set cache data:', e.message);
+            }}
             
-            // Inject analytics data
+            // Inject analytics data (safe)
             const analyticsData = profileData.local_storage_data.analytics_data;
-            localStorage.setItem('analytics_data', JSON.stringify(analyticsData));
+            try {{
+                localStorage.setItem('analytics_data', JSON.stringify(analyticsData));
+            }} catch (e) {{
+                console.log('Could not set analytics data:', e.message);
+            }}
             
-            // Add realistic user agent hints
-            Object.defineProperty(navigator, 'doNotTrack', {{
-                get: function() {{ return preferences.privacy.do_not_track ? '1' : '0'; }}
-            }});
-            
-            // Simulate realistic connection
-            Object.defineProperty(navigator, 'connection', {{
-                get: function() {{
-                    return {{
-                        effectiveType: '4g',
-                        rtt: {random.randint(20, 100)},
-                        downlink: {random.uniform(5, 25)},
-                        saveData: false
-                    }};
-                }}
-            }});
-            
-            // Add realistic screen properties
-            Object.defineProperty(screen, 'width', {{
-                get: function() {{ return {self.user_demographics['screen_resolution'].split('x')[0]}; }}
-            }});
-            Object.defineProperty(screen, 'height', {{
-                get: function() {{ return {self.user_demographics['screen_resolution'].split('x')[1]}; }}
-            }});
-            
-            // Add realistic timezone
-            Object.defineProperty(Intl.DateTimeFormat.prototype, 'resolvedOptions', {{
-                value: function() {{
-                    return {{
-                        locale: '{self.user_demographics['language']}',
-                        calendar: 'gregory',
-                        numberingSystem: 'latn',
-                        timeZone: '{self.user_demographics['timezone']}'
-                    }};
-                }}
-            }});
+            // Store user preferences for stealth (safe approach)
+            try {{
+                localStorage.setItem('stealth_user_preferences', JSON.stringify({{
+                    do_not_track: preferences.privacy.do_not_track,
+                    language: '{self.user_demographics['language']}',
+                    timezone: '{self.user_demographics['timezone']}',
+                    screen_resolution: '{self.user_demographics['screen_resolution']}'
+                }}));
+            }} catch (e) {{
+                console.log('Could not set stealth preferences:', e.message);
+            }}
             
             // Store profile data globally for access
             window.stealthProfileData = profileData;
